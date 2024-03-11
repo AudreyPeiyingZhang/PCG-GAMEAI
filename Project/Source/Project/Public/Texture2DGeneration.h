@@ -18,17 +18,24 @@ public:
 	ATexture2DGeneration();
 	virtual void Tick(float DeltaTime) override;
 	UFUNCTION(BlueprintCallable, Category = "Texture Creation" )
-	void CreateRealTimeDynamicTexture(int32 Width = 1024, int32 Height = 1024);
+	void SetUpRealTimeDynamicTexture(int32 Width = 1024, int32 Height = 1024);
 
 	
 
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Texture Creation")
-	UCanvasRenderTarget2D* DynamicTexture;
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Texture Creation")
+	UTextureRenderTarget2D* HeightfieldTextureRenderTarget;
 	UFUNCTION(BlueprintCallable, Category = "Texture Update")
-	void OnUpdateCanvasRenderTarget2D(UCanvas* Canvas,  int32 Width = 1024, int32 Height = 1024);
+	void OnUpdateTextureRenderTarget2D();
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Object to render")
+	UStaticMeshComponent* Plane;
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Material")
+	UMaterialInstanceDynamic* MaterialInstance;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Material")
+	UMaterialInterface* MaterialInterface;
+	
 	
 
 };

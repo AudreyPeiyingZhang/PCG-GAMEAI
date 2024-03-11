@@ -3,6 +3,7 @@
 
 #include "Texture2DGeneration.h"
 
+#include "Kismet/KismetRenderingLibrary.h"
 
 
 // Sets default values
@@ -10,14 +11,22 @@ ATexture2DGeneration::ATexture2DGeneration()
 {
  	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
-
+	Plane = CreateDefaultSubobject<UStaticMeshComponent>("Plane");
+	MaterialInterface = CreateDefaultSubobject<UMaterialInterface>("MaterialInterface");
+	
+	
+	
+	
 }
 
 // Called when the game starts or when spawned
 void ATexture2DGeneration::BeginPlay()
 {
 	Super::BeginPlay();
-	CreateRealTimeDynamicTexture();
+	HeightfieldTextureRenderTarget = UKismetRenderingLibrary::CreateRenderTarget2D(this, 1024, 1024);
+	MaterialInstance = UMaterialInstanceDynamic::Create(MaterialInterface, this);
+	MaterialInstance->SetTextureParameterValue(FName("TextureRenderTarget"), HeightfieldTextureRenderTarget);
+	Plane->SetMaterial(0, MaterialInstance);
 	
 }
 
@@ -28,30 +37,19 @@ void ATexture2DGeneration::Tick(float DeltaTime)
 
 }
 
-void ATexture2DGeneration::CreateRealTimeDynamicTexture(int32 Width, int32 Height)
+void ATexture2DGeneration::SetUpRealTimeDynamicTexture(int32 Width, int32 Height)
 {
-	DynamicTexture = UCanvasRenderTarget2D::CreateCanvasRenderTarget2D(this, UCanvasRenderTarget2D::StaticClass(),Width, Height);
-	DynamicTexture->ClearColor = FLinearColor::White;
-	DynamicTexture->OnCanvasRenderTargetUpdate.AddDynamic(this, &ATexture2DGeneration::OnUpdateCanvasRenderTarget2D);
-	DynamicTexture->UpdateResource();
-	
 	
 }
 
-void ATexture2DGeneration::OnUpdateCanvasRenderTarget2D(UCanvas* Canvas,  int32 Width, int32 Height)
+void ATexture2DGeneration::OnUpdateTextureRenderTarget2D()
+
 {
-	if(Canvas)
+	for(int X = 0; X < 1024; X++)
 	{
-		const FColor PixelColor = FColor::Green;
-		Canvas->SetDrawColor(PixelColor);
-		for(int X = 0; X < Width; X++)
+		for(int Y = 0; Y<1024; Y++)
 		{
-			for(int Y = 0; Y < Height; Y++)
-			{
-				Canvas->K2_DrawBox(FVector2D(X, Y), FVector2D(1, 1), 1.0f);
-			}
+			//HeightfieldTextureRenderTarget->
 		}
-		
-		
 	}
 }
