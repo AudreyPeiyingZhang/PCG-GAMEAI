@@ -24,12 +24,8 @@ public:
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
-	//UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Texture Creation")
-	//UTextureRenderTarget2D* HeightfieldTextureRenderTarget;
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Texture Creation")
-	UCanvasRenderTarget2D* CanvasRenderTarget;
-	UFUNCTION(BlueprintCallable, Category = "Texture Update")
-	void OnUpdateCanvasRenderTarget(UCanvas* Canvas, int32 Width = 1024, int32 Height = 1024);
+	UTexture2D* Texture2D;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Object to render")
 	UStaticMeshComponent* Plane;
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Material")

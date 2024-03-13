@@ -13,6 +13,15 @@ UCLASS()
 class PROJECT_API UMyBlueprintFunctionLibrary : public UBlueprintFunctionLibrary
 {
 	GENERATED_BODY()
+public:
+	UFUNCTION(BlueprintCallable, Category = "Make Texture")
+	static UTexture2D* CreateTexture2D(int32 Width, int32 Height);
+	UFUNCTION(BlueprintCallable, Category = "Make Texture")
+	static void ClearTexture2D(UTexture2D* Texture2D, FColor Colour);
+	UFUNCTION(BlueprintCallable, Category = "Make Texture")
+	static void SetTexture2DPixels(UTexture2D* Texture2D, int32 X, int32 Y, FColor Colour);
+	
+	
 
 
 	//function to make texture 2d
