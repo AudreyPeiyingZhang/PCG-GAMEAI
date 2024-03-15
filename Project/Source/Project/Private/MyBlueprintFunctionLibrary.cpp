@@ -55,18 +55,18 @@ float UMyBlueprintFunctionLibrary::RandomVector2DtoVector1D (FVector2D Vector2D,
 	
 }
 
-FVector2D UMyBlueprintFunctionLibrary::RandomVector2DtoVector2D(FVector2D AnyVector2D)
+FVector2D UMyBlueprintFunctionLibrary::RandomVector2DtoVector2D(FVector2D Vector2D)
 {
-	AnyVector2D.X = RandomVector2DtoVector1D(AnyVector2D, FVector2D(8.453, 7.983), 2.2, 50.12);
-	AnyVector2D.Y = RandomVector2DtoVector1D(AnyVector2D, FVector2D(4.912, 10.902), -9.8, 102.54);
-	return AnyVector2D;
+	Vector2D.X = RandomVector2DtoVector1D(Vector2D, FVector2D(8.453, 7.983), 2.2, 50.12);
+	Vector2D.Y = RandomVector2DtoVector1D(Vector2D, FVector2D(4.912, 10.902), -9.8, 102.54);
+	return Vector2D;
 	
 }
 
 float UMyBlueprintFunctionLibrary::RandomVector1DtoVector1D(float RandomFloatNumber, float a,float b)
 {
-	static float Random =  FMath::Frac(FMath::Sin(RandomFloatNumber + a)*b);
-	return Random;
+	const float RandomNumber =  FMath::Frac(FMath::Sin(RandomFloatNumber + a)*b);
+	return RandomNumber;
 	
 }
 
@@ -91,7 +91,7 @@ FColor UMyBlueprintFunctionLibrary::VoronoiCalculation(FVector2D PixelLocation, 
 		{
 			FVector2D CellXYIndex = BaseCell + FVector2D(X,Y);
 			FVector2D CellPos = CellXYIndex + RandomVector2DtoVector2D(CellXYIndex);
-			const float CellDistWorldPosition = (CellPos - Value).Size();
+			const float CellDistWorldPosition = (CellPos - Value).Length();
 			if(CellDistWorldPosition < MinDist)
 			{
 				MinDist = CellDistWorldPosition;
@@ -104,8 +104,8 @@ FColor UMyBlueprintFunctionLibrary::VoronoiCalculation(FVector2D PixelLocation, 
 	}
 
 	const float RandomColor = RandomVector2DtoVector1D(ClosestCell, FVector2D(289.89, 38.02), 4.98, 60.90);
-	const FVector Vector3D = RandomVector1DtoVector3D(RandomColor);
-	const FColor PixelDrawCol = FColor(Vector3D.X * 255, Vector3D.Y * 255,Vector3D.Z * 255, 255);
+	const FVector vOffset = RandomVector1DtoVector3D(RandomColor);
+	const FColor PixelDrawCol = FColor(vOffset.X * 255, vOffset.Y * 255,vOffset.Z * 255, 255);
 	return PixelDrawCol;
 
 }

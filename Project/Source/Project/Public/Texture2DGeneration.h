@@ -25,7 +25,7 @@ protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Texture Creation")
-	UTexture2D* Texture2D;
+	UTexture2D* pTexture;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Object to render")
 	UStaticMeshComponent* Plane;
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Material")
