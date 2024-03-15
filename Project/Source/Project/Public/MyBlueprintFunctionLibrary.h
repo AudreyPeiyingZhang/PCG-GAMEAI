@@ -20,9 +20,21 @@ public:
 	static void ClearTexture2D(UTexture2D* Texture2D, FColor Colour);
 	UFUNCTION(BlueprintCallable, Category = "Make Texture")
 	static void SetTexture2DPixels(UTexture2D* Texture2D, int32 X, int32 Y, FColor Colour);
-	
+	UFUNCTION(BlueprintCallable, Category = "Make Noise")
+	static float RandomVector2DtoVector1D(FVector2D Vector2D, FVector2D a, float b, float c);
+	UFUNCTION(BlueprintCallable, Category = "Make Noise")
+	static FVector2D RandomVector2DtoVector2D (FVector2D Vector2D);
+	UFUNCTION(BlueprintCallable, Category = "Make Noise")
+	static float RandomVector1DtoVector1D (float RandomFloatNumber, float a,float b);
+	UFUNCTION(BlueprintCallable, Category = "Make Noise")
+	static FVector RandomVector1DtoVector3D (float RandomFloatNumber);
+	UFUNCTION(BlueprintCallable, Category = "Voronoi Calculation")
+	static FColor VoronoiCalculation(FVector2D PixelLocation, float CellScale);
+	UFUNCTION(BlueprintCallable, Category = "Voronoi Calculation")
+	static void DrawVoronoiOnTexture2D (UTexture2D* Texture2D, float CellSize);
 	
 
+		
 
 	//function to make texture 2d
 

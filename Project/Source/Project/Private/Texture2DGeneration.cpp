@@ -24,13 +24,26 @@ ATexture2DGeneration::ATexture2DGeneration()
 void ATexture2DGeneration::BeginPlay()
 {
 	Super::BeginPlay();
-	
-	Texture2D = UMyBlueprintFunctionLibrary::CreateTexture2D(24,24 );
+	constexpr float CellScale = 10.0f;
+	//create texture2d
+	Texture2D = UMyBlueprintFunctionLibrary::CreateTexture2D(512,512 );
+	//set texture to material
 	MaterialInstance = UMaterialInstanceDynamic::Create(MaterialInterface, this);
 	MaterialInstance->SetTextureParameterValue(FName("BaseTexture"), Texture2D);
+	//set material to object
 	Plane->SetMaterial(0, MaterialInstance);
+	//clear texture2d
 	UMyBlueprintFunctionLibrary::ClearTexture2D(Texture2D, FColor::White);
-	UMyBlueprintFunctionLibrary::SetTexture2DPixels(Texture2D, 20, 20, FColor::Red);
+	//draw any (x,y) on texture2d pixel
+	//UMyBlueprintFunctionLibrary::SetTexture2DPixels(Texture2D, 20, 20, FColor::Red);
+	//create random FVector2D by FVector2D seed, return FVector2D on the range FVector2D.X[0,1], FVector2D.Y[0,1]
+	//const FVector2D Seed = FVector2D(13.56, 87.31);
+	//UMyBlueprintFunctionLibrary::RandomVector2DtoVector2D(Seed);
+
+	//drawVoronoi
+	UMyBlueprintFunctionLibrary::DrawVoronoiOnTexture2D(Texture2D, CellScale);
+	
+	
 	
 	
 }
