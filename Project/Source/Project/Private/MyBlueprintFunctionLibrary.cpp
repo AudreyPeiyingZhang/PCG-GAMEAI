@@ -79,8 +79,54 @@ FVector UMyBlueprintFunctionLibrary::RandomVector1DtoVector3D(float RandomFloatN
 	return Vector3D;
 }
 
+TArray<FVector2D> UMyBlueprintFunctionLibrary::VoronoiSeeds;
+
+void UMyBlueprintFunctionLibrary::VoronoiSeedsCalculation(UTexture2D* Texture2D, float CellSize)
+{
+	const int Width = Texture2D->GetSizeX();
+	const int Height = Texture2D->GetSizeY();
+	const int PixelsInEachCellX = Width/CellSize;
+	const int PixelsInEachCellY = Height/CellSize;
+	for(int X = 0; X < CellSize; X++)
+	{
+		for(int Y = 0; Y < CellSize; Y++)
+		{
+			FVector2D SeedPoints = FVector2D((X* PixelsInEachCellX) + FMath::RandRange(0, PixelsInEachCellX),(Y* PixelsInEachCellY) + FMath::RandRange(0, PixelsInEachCellY));
+			VoronoiSeeds.Add(SeedPoints);
+		}
+	}
+}
+
+
+void UMyBlueprintFunctionLibrary::DrawVoronoiSeedsOnTexture2D(UTexture2D* Texture2D, FColor color)
+{
+
+	const int32 Width = Texture2D->GetSizeX();
+	const int32 Height = Texture2D->GetSizeY();
+	FByteBulkData* RawImageDataOut = &Texture2D->GetPlatformData()->Mips[0].BulkData;
+	FColor* FormatedImageDataOut = static_cast<FColor*>(RawImageDataOut->Lock(LOCK_READ_WRITE));
+	for(int i = 0; i<VoronoiSeeds.Num(); i++)
+	{
+		for (int X=0; X<Width; X++)
+		{
+			for(int Y =0; Y<Height; Y++)
+			{
+				if(X == VoronoiSeeds[i].X && Y == VoronoiSeeds[i].Y)
+				{
+					FormatedImageDataOut[(Y * Width) + X] = color;
+				}
+			}
+			
+		}
+	}
+	RawImageDataOut->Unlock();
+	Texture2D->UpdateResource();
+	VoronoiSeeds.Empty();
+}
+
 FColor UMyBlueprintFunctionLibrary::VoronoiCalculation(FVector2D PixelLocation, float CellScale)
 {
+	
 	const FVector2D Value = FVector2D(PixelLocation.X/CellScale, PixelLocation.Y/CellScale);
 	const FVector2D BaseCell = FVector2D(FMath::Floor(Value.X), FMath::Floor(Value.Y));
 	float MinDist = FLT_MAX;
@@ -90,6 +136,7 @@ FColor UMyBlueprintFunctionLibrary::VoronoiCalculation(FVector2D PixelLocation, 
 		for(int Y = -1; Y <=1; Y++)
 		{
 			FVector2D CellXYIndex = BaseCell + FVector2D(X,Y);
+			//cellPos is seed
 			FVector2D CellPos = CellXYIndex + RandomVector2DtoVector2D(CellXYIndex);
 			const float CellDistWorldPosition = (CellPos - Value).Length();
 			if(CellDistWorldPosition < MinDist)
@@ -110,6 +157,9 @@ FColor UMyBlueprintFunctionLibrary::VoronoiCalculation(FVector2D PixelLocation, 
 
 }
 
+
+
+
 void UMyBlueprintFunctionLibrary::DrawVoronoiOnTexture2D(UTexture2D* Texture2D, float CellSize)
 {
 
@@ -128,3 +178,4 @@ void UMyBlueprintFunctionLibrary::DrawVoronoiOnTexture2D(UTexture2D* Texture2D, 
 	RawImageDataOut->Unlock();
 	Texture2D->UpdateResource();
 }
+

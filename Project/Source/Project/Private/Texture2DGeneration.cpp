@@ -4,7 +4,7 @@
 #include "Texture2DGeneration.h"
 
 #include "MyBlueprintFunctionLibrary.h"
-#include "Kismet/KismetRenderingLibrary.h"
+
 
 
 // Sets default values
@@ -24,9 +24,9 @@ ATexture2DGeneration::ATexture2DGeneration()
 void ATexture2DGeneration::BeginPlay()
 {
 	Super::BeginPlay();
-	constexpr float CellScale = 150.0f;
+	constexpr int CellScale = 10;
 	//create texture2d
-	pTexture = UMyBlueprintFunctionLibrary::CreateTexture2D(512,512 );
+	pTexture = UMyBlueprintFunctionLibrary::CreateTexture2D(100,100 );
 	//set texture to material
 	MaterialInstance = UMaterialInstanceDynamic::Create(MaterialInterface, this);
 	MaterialInstance->SetTextureParameterValue(FName("BaseTexture"), pTexture);
@@ -41,9 +41,11 @@ void ATexture2DGeneration::BeginPlay()
 	//UMyBlueprintFunctionLibrary::RandomVector2DtoVector2D(Seed);
 
 	//drawVoronoi
+	
+	
+	UMyBlueprintFunctionLibrary::VoronoiSeedsCalculation(pTexture, CellScale);
 	UMyBlueprintFunctionLibrary::DrawVoronoiOnTexture2D(pTexture, CellScale);
-	
-	
+	UMyBlueprintFunctionLibrary::DrawVoronoiSeedsOnTexture2D(pTexture, FColor::Black);
 	
 	
 }

@@ -29,11 +29,18 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Make Noise")
 	static FVector RandomVector1DtoVector3D (float RandomFloatNumber);
 	UFUNCTION(BlueprintCallable, Category = "Voronoi Calculation")
+	static void VoronoiSeedsCalculation(UTexture2D* Texture2D,float CellSize);
+	UFUNCTION(BlueprintCallable, Category = "Voronoi Calculation")
+	static void DrawVoronoiSeedsOnTexture2D(UTexture2D* Texture2D, FColor color);
+	UFUNCTION(BlueprintCallable, Category = "Voronoi Calculation")
 	static FColor VoronoiCalculation(FVector2D PixelLocation, float CellScale);
 	UFUNCTION(BlueprintCallable, Category = "Voronoi Calculation")
 	static void DrawVoronoiOnTexture2D (UTexture2D* Texture2D, float CellSize);
-	
 
+
+	
+public:	
+	static TArray<FVector2D> VoronoiSeeds;
 		
 
 	//function to make texture 2d
