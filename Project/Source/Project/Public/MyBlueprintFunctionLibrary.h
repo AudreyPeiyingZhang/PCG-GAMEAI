@@ -36,11 +36,20 @@ public:
 	static FColor VoronoiCalculation(FVector2D PixelLocation, float CellCount);
 	UFUNCTION(BlueprintCallable, Category = "Voronoi Calculation")
 	static void DrawVoronoiOnTexture2D (UTexture2D* Texture2D, float CellCount);
-
+	UFUNCTION(BlueprintCallable, Category = "Vertices Calculation")
+	static void CalculateVertices(UTexture2D* Texture2D);
+	UFUNCTION(BlueprintCallable, Category = "Vertices Calculation")
+	static void DrawVerticesOnTexture2D(UTexture2D* Texture2D,FColor color);
+	
 
 	
 public:	
 	static TArray<FVector2D> VoronoiSeeds;
+	static TArray<FVector2D> Vertices;
+	static TArray<TArray<int>> DistField;
+	static void InitializeDistField(UTexture2D* Texture2D);
+	static TArray<TArray<int>> GradientField;
+	static void InitializeGradientField(UTexture2D* Texture2D);
 		
 
 	//function to make texture 2d

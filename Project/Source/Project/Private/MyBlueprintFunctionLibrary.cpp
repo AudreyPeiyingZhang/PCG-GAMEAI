@@ -79,7 +79,47 @@ FVector UMyBlueprintFunctionLibrary::RandomVector1DtoVector3D(float RandomFloatN
 	return Vector3D;
 }
 
+
 TArray<FVector2D> UMyBlueprintFunctionLibrary::VoronoiSeeds;
+TArray<FVector2D> UMyBlueprintFunctionLibrary::Vertices;
+TArray<TArray<int>> UMyBlueprintFunctionLibrary::DistField;
+TArray<TArray<int>> UMyBlueprintFunctionLibrary::GradientField;
+
+
+void UMyBlueprintFunctionLibrary::InitializeDistField(UTexture2D* Texture2D)
+{
+	const int32 Width = Texture2D -> GetSizeX();
+	const int32 Height = Texture2D -> GetSizeY();
+	DistField.SetNum(Width);
+	
+	for(int X = 0; X < Width; ++X)
+	{
+		DistField[X].SetNum(Height);
+		
+		for(int Y = 0; Y < Height; ++Y)
+		{
+			DistField[X][Y] = 1000; 
+		}
+	}
+}
+
+
+void UMyBlueprintFunctionLibrary::InitializeGradientField(UTexture2D* Texture2D)
+{
+	const int32 Width = Texture2D -> GetSizeX();
+	const int32 Height = Texture2D -> GetSizeY();
+	GradientField.SetNum(Width);
+	
+	for(int X = 0; X < Width; ++X)
+	{
+		GradientField[X].SetNum(Height);
+		
+		for(int Y = 0; Y < Height; ++Y)
+		{
+			GradientField[X][Y] = 1000; 
+		}
+	}
+}
 
 /*void UMyBlueprintFunctionLibrary::VoronoiSeedsCalculation(UTexture2D* Texture2D, float CellCount)
 {
@@ -228,6 +268,9 @@ void UMyBlueprintFunctionLibrary::DrawVoronoiOnTexture2D(UTexture2D* Texture2D, 
 					
 				}
 			}
+
+			DistField[X][Y] = MinDist;
+			//UE_LOG(LogTemp, Warning, TEXT("DistField at (%i, %i): %d"), X, Y, DistField[X][Y]);
 			const float NoiseColor = RandomVector2DtoVector1D(ClosestCell, FVector2D(289.89, 38.02), 4.98, 60.90);
 			const FVector Color = RandomVector1DtoVector3D(NoiseColor);
 			const FColor PixelDrawCol = FColor(Color.X * 255, Color.Y * 255,Color.Z * 255, 255);
@@ -241,4 +284,63 @@ void UMyBlueprintFunctionLibrary::DrawVoronoiOnTexture2D(UTexture2D* Texture2D, 
 	}
 	RawImageDataOut->Unlock();
 	Texture2D->UpdateResource();
+}
+
+void UMyBlueprintFunctionLibrary::CalculateVertices(UTexture2D* Texture2D)
+{
+	const int32 Width = Texture2D->GetSizeX();
+	const int32 Height = Texture2D->GetSizeY();
+
+	for(int X=0; X<Width; X++)
+	{
+		for (int Y =0; Y<Height; Y++)
+		{
+			const float GradientX = DistField[X+1][Y] - DistField[X-1][Y];
+			const float GradientY = DistField[X][Y+1] - DistField[X][Y-1];
+			const float GradientMagnitude = FMath::Sqrt(GradientX*GradientX + GradientY*GradientY);
+
+			GradientField[X][Y] = GradientMagnitude;
+			UE_LOG(LogTemp, Warning, TEXT("Gradient at (%i, %i): %d"), X, Y, GradientField[X][Y]);
+			
+		}
+	}
+
+	constexpr int32 Threshold = 5.0;
+	for(int X=0; X<Width; X++)
+	{
+		for (int Y =0; Y<Height; Y++)
+		{
+			if(GradientField[X][Y]>Threshold && GradientField[X][Y] > GradientField[X+1][Y] &&
+			GradientField[X][Y] > GradientField[X][Y+1])
+			{
+				Vertices.Add(FVector2D(X,Y));
+			}
+		}
+	}
+}
+
+void UMyBlueprintFunctionLibrary::DrawVerticesOnTexture2D(UTexture2D* Texture2D, FColor color)
+{
+
+	const int32 Width = Texture2D->GetSizeX();
+	const int32 Height = Texture2D->GetSizeY();
+	FByteBulkData* RawImageDataOut = &Texture2D->GetPlatformData()->Mips[0].BulkData;
+	FColor* FormatedImageDataOut = static_cast<FColor*>(RawImageDataOut->Lock(LOCK_READ_WRITE));
+	for(int i = 0; i<Vertices.Num(); i++)
+	{
+		for (int X=0; X<Width; X++)
+		{
+			for(int Y =0; Y<Height; Y++)
+			{
+				if(X == Vertices[i].X && Y == Vertices[i].Y)
+				{
+					FormatedImageDataOut[(Y * Width) + X] = color;
+				}
+			}
+			
+		}
+	}
+	RawImageDataOut->Unlock();
+	Texture2D->UpdateResource();
+	Vertices.Empty();
 }
