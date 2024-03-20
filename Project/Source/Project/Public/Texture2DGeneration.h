@@ -5,7 +5,6 @@
 #include "CoreMinimal.h"
 #include "Engine/CanvasRenderTarget2D.h"
 #include "GameFramework/Actor.h"
-#include "Engine/Canvas.h"
 #include "Texture2DGeneration.generated.h"
 
 UCLASS()

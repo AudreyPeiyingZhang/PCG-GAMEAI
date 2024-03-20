@@ -28,14 +28,14 @@ public:
 	static float RandomVector1DtoVector1D (float RandomFloatNumber, float a,float b);
 	UFUNCTION(BlueprintCallable, Category = "Make Noise")
 	static FVector RandomVector1DtoVector3D (float RandomFloatNumber);
-	UFUNCTION(BlueprintCallable, Category = "Voronoi Calculation")
-	static void VoronoiSeedsCalculation(UTexture2D* Texture2D,float CellSize);
+	//UFUNCTION(BlueprintCallable, Category = "Voronoi Calculation")
+	//static void VoronoiSeedsCalculation(UTexture2D* Texture2D,float CellCount);
 	UFUNCTION(BlueprintCallable, Category = "Voronoi Calculation")
 	static void DrawVoronoiSeedsOnTexture2D(UTexture2D* Texture2D, FColor color);
 	UFUNCTION(BlueprintCallable, Category = "Voronoi Calculation")
-	static FColor VoronoiCalculation(FVector2D PixelLocation, float CellScale);
+	static FColor VoronoiCalculation(FVector2D PixelLocation, float CellCount);
 	UFUNCTION(BlueprintCallable, Category = "Voronoi Calculation")
-	static void DrawVoronoiOnTexture2D (UTexture2D* Texture2D, float CellSize);
+	static void DrawVoronoiOnTexture2D (UTexture2D* Texture2D, float CellCount);
 
 
 	

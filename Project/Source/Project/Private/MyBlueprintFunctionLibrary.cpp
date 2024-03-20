@@ -81,21 +81,21 @@ FVector UMyBlueprintFunctionLibrary::RandomVector1DtoVector3D(float RandomFloatN
 
 TArray<FVector2D> UMyBlueprintFunctionLibrary::VoronoiSeeds;
 
-void UMyBlueprintFunctionLibrary::VoronoiSeedsCalculation(UTexture2D* Texture2D, float CellSize)
+/*void UMyBlueprintFunctionLibrary::VoronoiSeedsCalculation(UTexture2D* Texture2D, float CellCount)
 {
-	const int Width = Texture2D->GetSizeX();
-	const int Height = Texture2D->GetSizeY();
-	const int PixelsInEachCellX = Width/CellSize;
-	const int PixelsInEachCellY = Height/CellSize;
-	for(int X = 0; X < CellSize; X++)
+	const int32 Width = Texture2D->GetSizeX();
+	const int32 Height = Texture2D->GetSizeY();
+	const int32 PixelsInEachCellX = Width/CellCount;
+	const int32 PixelsInEachCellY = Height/CellCount;
+	for(int X = 0; X < CellCount; X++)
 	{
-		for(int Y = 0; Y < CellSize; Y++)
+		for(int Y = 0; Y < CellCount; Y++)
 		{
 			FVector2D SeedPoints = FVector2D((X* PixelsInEachCellX) + FMath::RandRange(0, PixelsInEachCellX),(Y* PixelsInEachCellY) + FMath::RandRange(0, PixelsInEachCellY));
 			VoronoiSeeds.Add(SeedPoints);
 		}
 	}
-}
+}*/
 
 
 void UMyBlueprintFunctionLibrary::DrawVoronoiSeedsOnTexture2D(UTexture2D* Texture2D, FColor color)
@@ -124,7 +124,7 @@ void UMyBlueprintFunctionLibrary::DrawVoronoiSeedsOnTexture2D(UTexture2D* Textur
 	VoronoiSeeds.Empty();
 }
 
-FColor UMyBlueprintFunctionLibrary::VoronoiCalculation(FVector2D PixelLocation, float CellScale)
+/*FColor UMyBlueprintFunctionLibrary::VoronoiCalculation(FVector2D PixelLocation, float CellScale)
 {
 	
 	const FVector2D Value = FVector2D(PixelLocation.X/CellScale, PixelLocation.Y/CellScale);
@@ -177,5 +177,68 @@ void UMyBlueprintFunctionLibrary::DrawVoronoiOnTexture2D(UTexture2D* Texture2D, 
 	}
 	RawImageDataOut->Unlock();
 	Texture2D->UpdateResource();
+}*/
+
+FColor UMyBlueprintFunctionLibrary::VoronoiCalculation(FVector2D PixelLocation, float CellCount)
+{
+	return FColor::Black;
+
+
 }
 
+
+
+
+void UMyBlueprintFunctionLibrary::DrawVoronoiOnTexture2D(UTexture2D* Texture2D, float CellCount)
+{
+
+	const int32 Width = Texture2D->GetSizeX();
+	const int32 Height = Texture2D->GetSizeY();
+	FByteBulkData* RawImageDataOut = &Texture2D->GetPlatformData()->Mips[0].BulkData;
+	FColor* FormatedImageDataOut = static_cast<FColor*>(RawImageDataOut->Lock(LOCK_READ_WRITE));
+
+	const int32 PixelsInEachCellX = Width/CellCount;
+	const int32 PixelsInEachCellY = Height/CellCount;
+
+	
+	
+	for(int X=0; X<Width; X++)
+	{
+		for (int Y =0; Y<Height; Y++)
+		{
+			const FVector2D CellXY = FVector2D(FMath::Floor(X/PixelsInEachCellX), FMath::Floor(Y/PixelsInEachCellY));
+			float MinDist = FLT_MAX;
+			FVector2D ClosestCell = FVector2D(0,0);
+
+			for(int i = -1; i<=1; i++)
+			{
+				for (int j = -1; j <=1; j++)
+				{
+					const FVector2D CurrentCellXY = FVector2D(CellXY.X + i, CellXY.Y +j);
+					if(CurrentCellXY.X < 0 || CurrentCellXY.Y < 0 || CurrentCellXY.X >=CellCount || CurrentCellXY.Y >=CellCount) continue;
+					FVector2D CurrentCellPixelXY = FVector2D(PixelsInEachCellX* CurrentCellXY.X,PixelsInEachCellY* CurrentCellXY.Y );
+					FVector2D VoronoiSeedPixelXY = CurrentCellPixelXY + FMath::Floor(FMath::Lerp(0, PixelsInEachCellX, RandomVector2DtoVector2D(CurrentCellPixelXY).X));
+					VoronoiSeeds.Add(VoronoiSeedPixelXY);
+					const float Dist = (FVector2D(X,Y) - VoronoiSeedPixelXY).Length();
+					if(Dist < MinDist)
+					{
+						MinDist = Dist;
+						ClosestCell = CurrentCellXY;
+					}
+					
+				}
+			}
+			const float NoiseColor = RandomVector2DtoVector1D(ClosestCell, FVector2D(289.89, 38.02), 4.98, 60.90);
+			const FVector Color = RandomVector1DtoVector3D(NoiseColor);
+			const FColor PixelDrawCol = FColor(Color.X * 255, Color.Y * 255,Color.Z * 255, 255);
+
+
+			
+			const FColor PixelColor = PixelDrawCol;
+			FormatedImageDataOut[(Y * Width) + X] = PixelColor;
+			
+		}
+	}
+	RawImageDataOut->Unlock();
+	Texture2D->UpdateResource();
+}

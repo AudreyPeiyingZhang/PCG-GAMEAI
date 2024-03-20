@@ -24,9 +24,9 @@ ATexture2DGeneration::ATexture2DGeneration()
 void ATexture2DGeneration::BeginPlay()
 {
 	Super::BeginPlay();
-	constexpr int CellScale = 10;
+	constexpr int CellCount = 10;
 	//create texture2d
-	pTexture = UMyBlueprintFunctionLibrary::CreateTexture2D(100,100 );
+	pTexture = UMyBlueprintFunctionLibrary::CreateTexture2D(200,200);
 	//set texture to material
 	MaterialInstance = UMaterialInstanceDynamic::Create(MaterialInterface, this);
 	MaterialInstance->SetTextureParameterValue(FName("BaseTexture"), pTexture);
@@ -43,8 +43,8 @@ void ATexture2DGeneration::BeginPlay()
 	//drawVoronoi
 	
 	
-	UMyBlueprintFunctionLibrary::VoronoiSeedsCalculation(pTexture, CellScale);
-	UMyBlueprintFunctionLibrary::DrawVoronoiOnTexture2D(pTexture, CellScale);
+	//UMyBlueprintFunctionLibrary::VoronoiSeedsCalculation(pTexture,CellCount  );
+	UMyBlueprintFunctionLibrary::DrawVoronoiOnTexture2D(pTexture,CellCount);
 	UMyBlueprintFunctionLibrary::DrawVoronoiSeedsOnTexture2D(pTexture, FColor::Black);
 	
 	
