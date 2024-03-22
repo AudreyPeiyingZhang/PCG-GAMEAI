@@ -48,7 +48,8 @@ void ATexture2DGeneration::BeginPlay()
 	//UMyBlueprintFunctionLibrary::VoronoiSeedsCalculation(pTexture,CellCount  );
 	UMyBlueprintFunctionLibrary::DrawVoronoiOnTexture2D(pTexture,CellCount);
 	UMyBlueprintFunctionLibrary::DrawVoronoiSeedsOnTexture2D(pTexture, FColor::Black);
-	//UMyBlueprintFunctionLibrary::CalculateVertices(pTexture);
+	UMyBlueprintFunctionLibrary::CalculateVertices(pTexture);
+	UMyBlueprintFunctionLibrary::DrawVerticesOnTexture2D(pTexture,FColor::Yellow);
 	
 	
 }

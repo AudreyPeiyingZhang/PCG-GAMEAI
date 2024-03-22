@@ -46,9 +46,9 @@ public:
 public:	
 	static TArray<FVector2D> VoronoiSeeds;
 	static TArray<FVector2D> Vertices;
-	static TArray<TArray<int>> DistField;
+	static TArray<TArray<float>> DistField;
 	static void InitializeDistField(UTexture2D* Texture2D);
-	static TArray<TArray<int>> GradientField;
+	static TArray<TArray<float>> GradientField;
 	static void InitializeGradientField(UTexture2D* Texture2D);
 		
 

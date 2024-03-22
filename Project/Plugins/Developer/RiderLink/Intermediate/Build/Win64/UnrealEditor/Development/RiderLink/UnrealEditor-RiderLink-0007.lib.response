@@ -6,6 +6,6 @@
 /NAME:"UnrealEditor-RiderLink-0007.dll"
 /IGNORE:4221
 /NODEFAULTLIB
-"D:\PCG-GAMEAI\Project\Plugins\Developer\RiderLink\Intermediate\Build\Win64\UnrealEditor\Development\RiderLink\Module.RiderLink.cpp.obj"
-"D:\PCG-GAMEAI\Project\Plugins\Developer\RiderLink\Intermediate\Build\Win64\UnrealEditor\Development\RiderLink\Default.rc2.res"
-/OUT:"D:\PCG-GAMEAI\Project\Plugins\Developer\RiderLink\Intermediate\Build\Win64\UnrealEditor\Development\RiderLink\UnrealEditor-RiderLink-0007.lib"
+"E:\PCG-GAMEAI\Project\Plugins\Developer\RiderLink\Intermediate\Build\Win64\UnrealEditor\Development\RiderLink\Module.RiderLink.cpp.obj"
+"E:\PCG-GAMEAI\Project\Plugins\Developer\RiderLink\Intermediate\Build\Win64\UnrealEditor\Development\RiderLink\Default.rc2.res"
+/OUT:"E:\PCG-GAMEAI\Project\Plugins\Developer\RiderLink\Intermediate\Build\Win64\UnrealEditor\Development\RiderLink\UnrealEditor-RiderLink-0007.lib"
