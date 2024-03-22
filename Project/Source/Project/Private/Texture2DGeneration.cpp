@@ -25,6 +25,7 @@ void ATexture2DGeneration::BeginPlay()
 {
 	Super::BeginPlay();
 	constexpr int CellCount = 10;
+	constexpr float mergeDistance = 7.0f;
 	//create texture2d
 	pTexture = UMyBlueprintFunctionLibrary::CreateTexture2D(200,200);
 	//set texture to material
@@ -36,6 +37,7 @@ void ATexture2DGeneration::BeginPlay()
 	UMyBlueprintFunctionLibrary::ClearTexture2D(pTexture, FColor::White);
 	UMyBlueprintFunctionLibrary::InitializeDistField(pTexture);
 	UMyBlueprintFunctionLibrary::InitializeGradientField(pTexture);
+	UMyBlueprintFunctionLibrary::InitializeClosestCellVoronoiSeedXY(pTexture);
 	//draw any (x,y) on texture2d pixel
 	//UMyBlueprintFunctionLibrary::SetTexture2DPixels(Texture2D, 20, 20, FColor::Red);
 	//create random FVector2D by FVector2D seed, return FVector2D on the range FVector2D.X[0,1], FVector2D.Y[0,1]
@@ -49,7 +51,9 @@ void ATexture2DGeneration::BeginPlay()
 	UMyBlueprintFunctionLibrary::DrawVoronoiOnTexture2D(pTexture,CellCount);
 	UMyBlueprintFunctionLibrary::DrawVoronoiSeedsOnTexture2D(pTexture, FColor::Black);
 	UMyBlueprintFunctionLibrary::CalculateVertices(pTexture);
-	UMyBlueprintFunctionLibrary::DrawVerticesOnTexture2D(pTexture,FColor::Yellow);
+	//UMyBlueprintFunctionLibrary::DrawVerticesOnTexture2D(pTexture,FColor::Yellow);
+	UMyBlueprintFunctionLibrary::MergeCloseVertices(mergeDistance);
+	UMyBlueprintFunctionLibrary::DrawMergedVerticesOnTexture2D(pTexture, FColor::Green);
 	
 	
 }

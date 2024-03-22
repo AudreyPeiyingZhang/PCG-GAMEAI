@@ -40,16 +40,23 @@ public:
 	static void CalculateVertices(UTexture2D* Texture2D);
 	UFUNCTION(BlueprintCallable, Category = "Vertices Calculation")
 	static void DrawVerticesOnTexture2D(UTexture2D* Texture2D,FColor color);
+	UFUNCTION(BlueprintCallable, Category = "Vertices Calculation")
+	static void MergeCloseVertices(float MergeDistance);
+	UFUNCTION(BlueprintCallable, Category = "Vertices Calculation")
+	static void DrawMergedVerticesOnTexture2D(UTexture2D* Texture2D,FColor color);
 	
 
 	
 public:	
 	static TArray<FVector2D> VoronoiSeeds;
 	static TArray<FVector2D> Vertices;
+	static TArray<FVector2D> MergedVertices;
 	static TArray<TArray<float>> DistField;
 	static void InitializeDistField(UTexture2D* Texture2D);
 	static TArray<TArray<float>> GradientField;
 	static void InitializeGradientField(UTexture2D* Texture2D);
+	static TArray<TArray<FVector2D>> ClosestCellVoronoiSeedXY;
+	static void InitializeClosestCellVoronoiSeedXY(UTexture2D* Texture2D);
 		
 
 	//function to make texture 2d

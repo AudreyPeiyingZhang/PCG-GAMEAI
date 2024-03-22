@@ -82,12 +82,31 @@ FVector UMyBlueprintFunctionLibrary::RandomVector1DtoVector3D(float RandomFloatN
 
 TArray<FVector2D> UMyBlueprintFunctionLibrary::VoronoiSeeds;
 TArray<FVector2D> UMyBlueprintFunctionLibrary::Vertices;
+TArray<FVector2D> UMyBlueprintFunctionLibrary::MergedVertices;
 TArray<TArray<float>> UMyBlueprintFunctionLibrary::DistField;
 TArray<TArray<float>> UMyBlueprintFunctionLibrary::GradientField;
+TArray<TArray<FVector2D>> UMyBlueprintFunctionLibrary::ClosestCellVoronoiSeedXY;
 
+void UMyBlueprintFunctionLibrary::InitializeClosestCellVoronoiSeedXY(UTexture2D* Texture2D)
+{
+	const int32 Width = Texture2D -> GetSizeX();
+	const int32 Height = Texture2D -> GetSizeY();
+	ClosestCellVoronoiSeedXY.SetNum(Width);
+	
+	for(int X = 0; X < Width; ++X)
+	{
+		ClosestCellVoronoiSeedXY[X].SetNum(Height);
+		
+		for(int Y = 0; Y < Height; ++Y)
+		{
+			ClosestCellVoronoiSeedXY[X][Y] = FVector2D(0,0); 
+		}
+	}
+}
 
 void UMyBlueprintFunctionLibrary::InitializeDistField(UTexture2D* Texture2D)
 {
+	//__int128 test;1<<ghfh|
 	const int32 Width = Texture2D -> GetSizeX();
 	const int32 Height = Texture2D -> GetSizeY();
 	DistField.SetNum(Width);
@@ -120,22 +139,6 @@ void UMyBlueprintFunctionLibrary::InitializeGradientField(UTexture2D* Texture2D)
 		}
 	}
 }
-
-/*void UMyBlueprintFunctionLibrary::VoronoiSeedsCalculation(UTexture2D* Texture2D, float CellCount)
-{
-	const int32 Width = Texture2D->GetSizeX();
-	const int32 Height = Texture2D->GetSizeY();
-	const int32 PixelsInEachCellX = Width/CellCount;
-	const int32 PixelsInEachCellY = Height/CellCount;
-	for(int X = 0; X < CellCount; X++)
-	{
-		for(int Y = 0; Y < CellCount; Y++)
-		{
-			FVector2D SeedPoints = FVector2D((X* PixelsInEachCellX) + FMath::RandRange(0, PixelsInEachCellX),(Y* PixelsInEachCellY) + FMath::RandRange(0, PixelsInEachCellY));
-			VoronoiSeeds.Add(SeedPoints);
-		}
-	}
-}*/
 
 
 void UMyBlueprintFunctionLibrary::DrawVoronoiSeedsOnTexture2D(UTexture2D* Texture2D, FColor color)
@@ -242,14 +245,13 @@ void UMyBlueprintFunctionLibrary::DrawVoronoiOnTexture2D(UTexture2D* Texture2D, 
 
 	
 	
-	for(int X=0; X<Width; X++)
+	for(int X=1; X<Width-1; X++)
 	{
-		for (int Y =0; Y<Height; Y++)
+		for (int Y =1; Y<Height-1; Y++)
 		{
 			const FVector2D CellXY = FVector2D(FMath::Floor(X/PixelsInEachCellX), FMath::Floor(Y/PixelsInEachCellY));
 			float MinDist = FLT_MAX;
 			FVector2D ClosestCell = FVector2D(0,0);
-			FVector2D ClosestCellVoronoiSeedPixelXY = FVector2D(0,0);
 			FVector2D PixelXYToClosestCellSeed = FVector2D(0,0);
 
 			for(int i = -1; i<=1; i++)
@@ -268,67 +270,21 @@ void UMyBlueprintFunctionLibrary::DrawVoronoiOnTexture2D(UTexture2D* Texture2D, 
 						PixelXYToClosestCellSeed = CurrentPixelToVoronoiSeed;
 						MinDist = Dist;
 						ClosestCell = CurrentCellXY;
-						ClosestCellVoronoiSeedPixelXY = VoronoiSeedPixelXY;
+						ClosestCellVoronoiSeedXY[X][Y] = VoronoiSeedPixelXY;
 					}
 					
 				}
 			}
-
-			float MinEdgeDist = FLT_MAX;
 			
-			for(int i = -1; i<=1; i++)
-			{
-				for (int j = -1; j <=1; j++)
-				{
-					const FVector2D CurrentCellXY = FVector2D(CellXY.X+i, CellXY.Y+j);
-					if(CurrentCellXY.X < 0 || CurrentCellXY.Y < 0 || CurrentCellXY.X >=CellCount || CurrentCellXY.Y >=CellCount) continue;
-					FVector2D CurrentCellPixelXY = FVector2D(PixelsInEachCellX*CurrentCellXY.X, PixelsInEachCellY* CurrentCellXY.Y);
-					FVector2D VoronoiSeedPixelXY = CurrentCellPixelXY + FMath::Floor(FMath::Lerp(0, PixelsInEachCellX, RandomVector2DtoVector2D(CurrentCellPixelXY).X));
-					FVector2D CurrentPixelToVoronoiSeed = (VoronoiSeedPixelXY - FVector2D(X,Y));
-					
-					float EdgeDistance = 0.0f;
 
-					FVector2D DistFromClosestCellToCurrentCellXY = (ClosestCell - CurrentCellXY);
-					DistFromClosestCellToCurrentCellXY.X = FMath::Abs(DistFromClosestCellToCurrentCellXY.X);
-					DistFromClosestCellToCurrentCellXY.Y = FMath::Abs(DistFromClosestCellToCurrentCellXY.Y);
-					bool isClosestCell = false;
-					if((DistFromClosestCellToCurrentCellXY.X + DistFromClosestCellToCurrentCellXY.X)< 0.1)
-					{
-						isClosestCell = true;
-					}
-					
-					if(!isClosestCell)
-					{
-						FVector2D PixelToCenter = (PixelXYToClosestCellSeed + CurrentPixelToVoronoiSeed)*0.5;
-						FVector2D CellDifference = (CurrentPixelToVoronoiSeed - PixelXYToClosestCellSeed);
-						CellDifference.Normalize();
-						EdgeDistance = FVector2D::DotProduct(PixelToCenter, CellDifference);
-						//EdgeDistance = FMath::Abs(EdgeDistance);
-						if(EdgeDistance < MinEdgeDist)
-						{
-							MinEdgeDist = EdgeDistance;
-						}
-						
-						
-					}
-					
-					
-				}
-			}
-			DistField[X][Y] = MinDist;
-			//UE_LOG(LogTemp, Warning, TEXT("DistField at (%i, %i): %f"), X, Y, DistField[X][Y]);
+			
+			
 			const float NoiseColor = RandomVector2DtoVector1D(ClosestCell, FVector2D(289.89, 38.02), 4.98, 60.90);
 			const FVector Color = RandomVector1DtoVector3D(NoiseColor);
 			const FColor PixelDrawCol = FColor(Color.X * 255, Color.Y * 255,Color.Z * 255, 255);
 
 
-			
-			FColor PixelColor = PixelDrawCol;
-			if(MinEdgeDist < 1.0f)
-			{
-				PixelColor = FColor::Blue;
-			}
-			UE_LOG(LogTemp, Warning, TEXT("MinEdgeDist: %f"), MinEdgeDist);
+			const FColor PixelColor = PixelDrawCol;
 			FormatedImageDataOut[(Y * Width) + X] = PixelColor;
 			
 		}
@@ -346,55 +302,28 @@ void UMyBlueprintFunctionLibrary::CalculateVertices(UTexture2D* Texture2D)
 	{
 		for (int Y =1; Y<Height-1; Y++)
 		{
+			TSet<FVector2D> UniqueSeeds;
 			for(int i = -1; i <=1; i++)
 			{
 				for(int j = -1; j <= 1; j++)
 				{
-					//xy
-					const float GradientX = DistField[X+i][Y] - DistField[X-i][Y];
-					const float GradientY = DistField[X][Y+j] - DistField[X][Y-j];
-					// diagonal
-					const float GradientDiagX = DistField[X + i][Y + j] - DistField[X - i][Y - j];
-					const float GradientDiagY = DistField[X - i][Y + j] - DistField[X + i][Y - j];
-
-					//calculate
-					const float GradientMagnitude = FMath::Sqrt(GradientX * GradientX + GradientY * GradientY + GradientDiagX * GradientDiagX + GradientDiagY * GradientDiagY);
-
-					GradientField[X][Y] = GradientMagnitude;
-					UE_LOG(LogTemp, Warning, TEXT("Gradient at (%i, %i): %f"), X, Y, GradientField[X][Y]);
+					if(i == 0 && j == 0) continue;
+					FVector2D CurrentClosestSeed = ClosestCellVoronoiSeedXY[X+i][Y+j];
+					UniqueSeeds.Add(CurrentClosestSeed);
+					
+	
 				}
 			}
 			
+			if(UniqueSeeds.Num()>=3)
+			{
+				Vertices.Add(FVector2D(X, Y));
+			}
 			
 		}
 	}
 
-	for (int X = 1; X < Width - 1; X++)
-	{
-		for (int Y = 1; Y < Height - 1; Y++)
-		{
-			bool isLocalMax = true;
-			
-			for (int i = -1; i <= 1; i++)
-			{
-				for (int j = -1; j <= 1; j++)
-				{
-					if (i == 0 && j == 0) continue; 
-					if (GradientField[X][Y] <= GradientField[X + i][Y + j])
-					{
-						isLocalMax = false;
-						break; 
-					}
-				}
-				if (!isLocalMax) break; 
-			}
-            
-			if (isLocalMax)
-			{
-				Vertices.Add(FVector2D(X, Y)); 
-			}
-		}
-	}
+
 }
 
 void UMyBlueprintFunctionLibrary::DrawVerticesOnTexture2D(UTexture2D* Texture2D, FColor color)
@@ -420,6 +349,79 @@ void UMyBlueprintFunctionLibrary::DrawVerticesOnTexture2D(UTexture2D* Texture2D,
 	}
 	RawImageDataOut->Unlock();
 	Texture2D->UpdateResource();
-	UE_LOG(LogTemp, Warning, TEXT("Number of vertices: %d"), Vertices.Num());
-	Vertices.Empty();
+	//UE_LOG(LogTemp, Warning, TEXT("Number of vertices: %d"), Vertices.Num());
+	
+}
+
+void UMyBlueprintFunctionLibrary::MergeCloseVertices(float MergeDistance)
+{
+	TArray<bool> isVertexMerged;
+	isVertexMerged.Init(false, Vertices.Num());
+	for (int i = 0; i < Vertices.Num(); i++)
+	{
+		if(isVertexMerged[i]) continue;
+		FVector2D CurrentVertex = Vertices[i];
+		TArray<FVector2D> ClusterVertices;
+		ClusterVertices.Add(CurrentVertex);
+		for (int j = i + 1; j < Vertices.Num(); j++)
+		{
+			if(isVertexMerged[j]) continue;
+			FVector2D DistanceVector = CurrentVertex-Vertices[j];
+			const float Dist = DistanceVector.Length();
+			if(Dist<MergeDistance)
+			{
+				ClusterVertices.Add(Vertices[j]);
+				isVertexMerged[j] = true;
+			}
+				
+		}
+
+		FVector2D MergedPosition = FVector2D(0,0);
+
+		for(int X = 0; X<ClusterVertices.Num(); X++)
+		{
+			MergedPosition +=  ClusterVertices[X];
+		}
+
+		MergedPosition /= ClusterVertices.Num();
+
+		MergedVertices.Add(MergedPosition);
+		
+		
+		
+
+
+
+
+
+		
+	}
+	UE_LOG(LogTemp, Warning, TEXT("Number of vertices: %i"), MergedVertices.Num());
+	
+}
+
+void UMyBlueprintFunctionLibrary::DrawMergedVerticesOnTexture2D(UTexture2D* Texture2D, FColor color)
+{
+	const int32 Width = Texture2D->GetSizeX();
+	const int32 Height = Texture2D->GetSizeY();
+	FByteBulkData* RawImageDataOut = &Texture2D->GetPlatformData()->Mips[0].BulkData;
+	FColor* FormatedImageDataOut = static_cast<FColor*>(RawImageDataOut->Lock(LOCK_READ_WRITE));
+	for(int i = 0; i<MergedVertices.Num(); i++)
+	{
+		int32 MergedVertexX = FMath::RoundToInt(MergedVertices[i].X);
+		int32 MergedVertexY = FMath::RoundToInt(MergedVertices[i].Y);
+		for (int X=0; X<Width; X++)
+		{
+			for(int Y =0; Y<Height; Y++)
+			{
+				if(FMath::Abs(X - MergedVertexX) <= 0.5f && FMath::Abs(Y - MergedVertexY) <= 0.5f)
+				{
+					FormatedImageDataOut[(Y * Width) + X] = color;
+				}
+			}
+			
+		}
+	}
+	RawImageDataOut->Unlock();
+	Texture2D->UpdateResource();
 }
