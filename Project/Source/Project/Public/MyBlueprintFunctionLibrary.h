@@ -9,6 +9,22 @@
 /**
  * 
  */
+
+USTRUCT(BlueprintType)
+struct FVerticesEdgesStruct
+{
+	GENERATED_BODY()
+
+public:
+
+	inline static FVector2D VertexPosition;
+	static TArray<int32> CurrentCellsUniqueNumbers;
+
+
+	
+};
+
+
 UCLASS()
 class PROJECT_API UMyBlueprintFunctionLibrary : public UBlueprintFunctionLibrary
 {
@@ -44,8 +60,10 @@ public:
 	static void MergeCloseVertices(float MergeDistance);
 	UFUNCTION(BlueprintCallable, Category = "Vertices Calculation")
 	static void DrawMergedVerticesOnTexture2D(UTexture2D* Texture2D,FColor color);
-	
-
+	UFUNCTION(BlueprintCallable, Category = "Edges Calculation")
+	static void CalculateEdges(UTexture2D* Texture2D);
+	UFUNCTION(BlueprintCallable, Category = "Edges Calculation")
+	static void PrintVerticesEdges();
 	
 public:	
 	static TArray<FVector2D> VoronoiSeeds;
@@ -57,6 +75,8 @@ public:
 	static void InitializeGradientField(UTexture2D* Texture2D);
 	static TArray<TArray<FVector2D>> ClosestCellVoronoiSeedXY;
 	static void InitializeClosestCellVoronoiSeedXY(UTexture2D* Texture2D);
+	static TArray<FVerticesEdgesStruct> VerticesEdges;
+	static TMap<FVector2D, int32> CellUniqueNumbers;
 		
 
 	//function to make texture 2d

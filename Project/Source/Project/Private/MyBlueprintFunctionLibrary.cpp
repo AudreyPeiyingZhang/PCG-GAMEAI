@@ -57,8 +57,8 @@ float UMyBlueprintFunctionLibrary::RandomVector2DtoVector1D (FVector2D Vector2D,
 
 FVector2D UMyBlueprintFunctionLibrary::RandomVector2DtoVector2D(FVector2D Vector2D)
 {
-	Vector2D.X = RandomVector2DtoVector1D(Vector2D, FVector2D(8.453, 7.983), 2.2, 50.12);
-	Vector2D.Y = RandomVector2DtoVector1D(Vector2D, FVector2D(4.912, 10.902), -9.8, 102.54);
+	Vector2D.X = RandomVector2DtoVector1D(Vector2D, FVector2D(8.453, 7.983), 6.4, 20.12);
+	Vector2D.Y = RandomVector2DtoVector1D(Vector2D, FVector2D(4.912, 10.902), -1.8, 8.54);
 	return Vector2D;
 	
 }
@@ -86,6 +86,9 @@ TArray<FVector2D> UMyBlueprintFunctionLibrary::MergedVertices;
 TArray<TArray<float>> UMyBlueprintFunctionLibrary::DistField;
 TArray<TArray<float>> UMyBlueprintFunctionLibrary::GradientField;
 TArray<TArray<FVector2D>> UMyBlueprintFunctionLibrary::ClosestCellVoronoiSeedXY;
+TArray<int32> FVerticesEdgesStruct::CurrentCellsUniqueNumbers;
+TArray<FVerticesEdgesStruct> UMyBlueprintFunctionLibrary::VerticesEdges;
+TMap<FVector2D, int32> UMyBlueprintFunctionLibrary::CellUniqueNumbers;
 
 void UMyBlueprintFunctionLibrary::InitializeClosestCellVoronoiSeedXY(UTexture2D* Texture2D)
 {
@@ -302,6 +305,7 @@ void UMyBlueprintFunctionLibrary::CalculateVertices(UTexture2D* Texture2D)
 	{
 		for (int Y =1; Y<Height-1; Y++)
 		{
+			
 			TSet<FVector2D> UniqueSeeds;
 			for(int i = -1; i <=1; i++)
 			{
@@ -309,8 +313,8 @@ void UMyBlueprintFunctionLibrary::CalculateVertices(UTexture2D* Texture2D)
 				{
 					if(i == 0 && j == 0) continue;
 					FVector2D CurrentClosestSeed = ClosestCellVoronoiSeedXY[X+i][Y+j];
-					UniqueSeeds.Add(CurrentClosestSeed);
 					
+					UniqueSeeds.Add(CurrentClosestSeed);
 	
 				}
 			}
@@ -318,6 +322,8 @@ void UMyBlueprintFunctionLibrary::CalculateVertices(UTexture2D* Texture2D)
 			if(UniqueSeeds.Num()>=3)
 			{
 				Vertices.Add(FVector2D(X, Y));
+			
+				
 			}
 			
 		}
@@ -349,7 +355,7 @@ void UMyBlueprintFunctionLibrary::DrawVerticesOnTexture2D(UTexture2D* Texture2D,
 	}
 	RawImageDataOut->Unlock();
 	Texture2D->UpdateResource();
-	//UE_LOG(LogTemp, Warning, TEXT("Number of vertices: %d"), Vertices.Num());
+
 	
 }
 
@@ -384,6 +390,8 @@ void UMyBlueprintFunctionLibrary::MergeCloseVertices(float MergeDistance)
 		}
 
 		MergedPosition /= ClusterVertices.Num();
+		MergedPosition.X = FMath::RoundToInt(MergedPosition.X);
+		MergedPosition.Y = FMath::RoundToInt(MergedPosition.Y);
 
 		MergedVertices.Add(MergedPosition);
 		
@@ -408,20 +416,76 @@ void UMyBlueprintFunctionLibrary::DrawMergedVerticesOnTexture2D(UTexture2D* Text
 	FColor* FormatedImageDataOut = static_cast<FColor*>(RawImageDataOut->Lock(LOCK_READ_WRITE));
 	for(int i = 0; i<MergedVertices.Num(); i++)
 	{
-		int32 MergedVertexX = FMath::RoundToInt(MergedVertices[i].X);
-		int32 MergedVertexY = FMath::RoundToInt(MergedVertices[i].Y);
-		for (int X=0; X<Width; X++)
+        
+		for (int X = 0; X < Width; X++)
 		{
-			for(int Y =0; Y<Height; Y++)
+			for(int Y = 0; Y < Height; Y++)
 			{
-				if(FMath::Abs(X - MergedVertexX) <= 0.5f && FMath::Abs(Y - MergedVertexY) <= 0.5f)
+				
+				if(FMath::Abs(X - MergedVertices[i].X) <= 1.0f && FMath::Abs(Y -MergedVertices[i].Y) <= 1.0f)
 				{
 					FormatedImageDataOut[(Y * Width) + X] = color;
 				}
 			}
-			
 		}
 	}
 	RawImageDataOut->Unlock();
 	Texture2D->UpdateResource();
+}
+
+
+void UMyBlueprintFunctionLibrary::CalculateEdges(UTexture2D* Texture2D)
+{
+	const int32 Width = Texture2D->GetSizeX();
+	const int32 Height = Texture2D->GetSizeY();
+
+	int32 CellNumber = 0;
+
+	for (int v = 0; v < MergedVertices.Num(); v++)
+	{
+		FVerticesEdgesStruct CurrentVerticesEdgesStruct;
+		CurrentVerticesEdgesStruct.VertexPosition = MergedVertices[v];
+        
+	
+		int32 X = MergedVertices[v].X;
+		int32 Y = MergedVertices[v].Y;
+
+		for (int i = -1; i <= 1; i++)
+		{
+			for (int j = -1; j <= 1; j++)
+			{
+				
+
+				FVector2D NeighborSeed = ClosestCellVoronoiSeedXY[X + i][Y + j];
+				if (!CellUniqueNumbers.Contains(NeighborSeed))
+				{
+					CellUniqueNumbers.Add(NeighborSeed, CellNumber++);
+				}
+				
+				CurrentVerticesEdgesStruct.CurrentCellsUniqueNumbers.Add(CellUniqueNumbers[NeighborSeed]);
+			}
+		}
+
+		
+		VerticesEdges.Add(CurrentVerticesEdgesStruct);
+	}
+	
+}
+
+void UMyBlueprintFunctionLibrary::PrintVerticesEdges()
+{
+	
+	for (int i =0; i<VerticesEdges.Num(); i++)
+	{
+		
+		FString VertexPositionStr = FString::Printf(TEXT("Vertex Position: (%f, %f)"), VerticesEdges[i].VertexPosition.X, VerticesEdges[i].VertexPosition.Y);
+		FString CellNumbersStr = TEXT("Unique Cell Numbers: ");
+		
+		for (int j =0; j < VerticesEdges[i].CurrentCellsUniqueNumbers.Num(); j++)
+		{
+			CellNumbersStr += FString::Printf(TEXT("%d "), VerticesEdges[i].CurrentCellsUniqueNumbers[j]);
+		}
+		
+		UE_LOG(LogTemp, Warning, TEXT("%s | %s"), *VertexPositionStr, *CellNumbersStr);
+	}
 }

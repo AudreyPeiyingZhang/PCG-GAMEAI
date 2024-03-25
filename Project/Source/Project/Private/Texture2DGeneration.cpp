@@ -25,7 +25,7 @@ void ATexture2DGeneration::BeginPlay()
 {
 	Super::BeginPlay();
 	constexpr int CellCount = 10;
-	constexpr float mergeDistance = 7.0f;
+	constexpr float MergeDistance = 5.0f;
 	//create texture2d
 	pTexture = UMyBlueprintFunctionLibrary::CreateTexture2D(200,200);
 	//set texture to material
@@ -52,9 +52,10 @@ void ATexture2DGeneration::BeginPlay()
 	UMyBlueprintFunctionLibrary::DrawVoronoiSeedsOnTexture2D(pTexture, FColor::Black);
 	UMyBlueprintFunctionLibrary::CalculateVertices(pTexture);
 	//UMyBlueprintFunctionLibrary::DrawVerticesOnTexture2D(pTexture,FColor::Yellow);
-	UMyBlueprintFunctionLibrary::MergeCloseVertices(mergeDistance);
+	UMyBlueprintFunctionLibrary::MergeCloseVertices(MergeDistance);
 	UMyBlueprintFunctionLibrary::DrawMergedVerticesOnTexture2D(pTexture, FColor::Green);
-	
+	UMyBlueprintFunctionLibrary::CalculateEdges(pTexture);
+	UMyBlueprintFunctionLibrary::PrintVerticesEdges();
 	
 }
 
