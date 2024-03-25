@@ -18,7 +18,7 @@ struct FVerticesEdgesStruct
 public:
 
 	inline static FVector2D VertexPosition;
-	static TArray<int32> CurrentCellsUniqueNumbers;
+	static TSet<int32> CurrentCellsUniqueNumbers;
 
 
 	
@@ -63,7 +63,7 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Edges Calculation")
 	static void CalculateEdges(UTexture2D* Texture2D);
 	UFUNCTION(BlueprintCallable, Category = "Edges Calculation")
-	static void PrintVerticesEdges();
+	static void GroupVerticesWithSharedCells();
 	
 public:	
 	static TArray<FVector2D> VoronoiSeeds;

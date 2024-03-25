@@ -55,7 +55,7 @@ void ATexture2DGeneration::BeginPlay()
 	UMyBlueprintFunctionLibrary::MergeCloseVertices(MergeDistance);
 	UMyBlueprintFunctionLibrary::DrawMergedVerticesOnTexture2D(pTexture, FColor::Green);
 	UMyBlueprintFunctionLibrary::CalculateEdges(pTexture);
-	UMyBlueprintFunctionLibrary::PrintVerticesEdges();
+	UMyBlueprintFunctionLibrary::GroupVerticesWithSharedCells();
 	
 }
 

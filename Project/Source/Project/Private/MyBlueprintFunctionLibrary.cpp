@@ -86,7 +86,7 @@ TArray<FVector2D> UMyBlueprintFunctionLibrary::MergedVertices;
 TArray<TArray<float>> UMyBlueprintFunctionLibrary::DistField;
 TArray<TArray<float>> UMyBlueprintFunctionLibrary::GradientField;
 TArray<TArray<FVector2D>> UMyBlueprintFunctionLibrary::ClosestCellVoronoiSeedXY;
-TArray<int32> FVerticesEdgesStruct::CurrentCellsUniqueNumbers;
+TSet<int32> FVerticesEdgesStruct::CurrentCellsUniqueNumbers;
 TArray<FVerticesEdgesStruct> UMyBlueprintFunctionLibrary::VerticesEdges;
 TMap<FVector2D, int32> UMyBlueprintFunctionLibrary::CellUniqueNumbers;
 
@@ -311,7 +311,7 @@ void UMyBlueprintFunctionLibrary::CalculateVertices(UTexture2D* Texture2D)
 			{
 				for(int j = -1; j <= 1; j++)
 				{
-					if(i == 0 && j == 0) continue;
+					
 					FVector2D CurrentClosestSeed = ClosestCellVoronoiSeedXY[X+i][Y+j];
 					
 					UniqueSeeds.Add(CurrentClosestSeed);
@@ -322,7 +322,6 @@ void UMyBlueprintFunctionLibrary::CalculateVertices(UTexture2D* Texture2D)
 			if(UniqueSeeds.Num()>=3)
 			{
 				Vertices.Add(FVector2D(X, Y));
-			
 				
 			}
 			
@@ -383,6 +382,7 @@ void UMyBlueprintFunctionLibrary::MergeCloseVertices(float MergeDistance)
 		}
 
 		FVector2D MergedPosition = FVector2D(0,0);
+		FVector2D MostAccurateVertex = FVector2D(0,0);
 
 		for(int X = 0; X<ClusterVertices.Num(); X++)
 		{
@@ -390,10 +390,23 @@ void UMyBlueprintFunctionLibrary::MergeCloseVertices(float MergeDistance)
 		}
 
 		MergedPosition /= ClusterVertices.Num();
-		MergedPosition.X = FMath::RoundToInt(MergedPosition.X);
-		MergedPosition.Y = FMath::RoundToInt(MergedPosition.Y);
+		float Distance = FLT_MAX;
 
-		MergedVertices.Add(MergedPosition);
+		for(int Y = 0; Y<ClusterVertices.Num(); Y++)
+		{
+			FVector2D CurrentVertexPos = ClusterVertices[Y];
+			const float CurrentDist = (CurrentVertexPos-MergedPosition).Length();
+			if(CurrentDist < Distance)
+			{
+				Distance = CurrentDist;
+				MostAccurateVertex = CurrentVertexPos;
+				
+			}
+		}
+		//MergedPosition.X = FMath::RoundToInt(MergedPosition.X);
+		//MergedPosition.Y = FMath::RoundToInt(MergedPosition.Y);
+
+		MergedVertices.Add(MostAccurateVertex);
 		
 		
 		
@@ -445,11 +458,13 @@ void UMyBlueprintFunctionLibrary::CalculateEdges(UTexture2D* Texture2D)
 	{
 		FVerticesEdgesStruct CurrentVerticesEdgesStruct;
 		CurrentVerticesEdgesStruct.VertexPosition = MergedVertices[v];
+		CurrentVerticesEdgesStruct.CurrentCellsUniqueNumbers.Empty();
         
 	
-		int32 X = MergedVertices[v].X;
-		int32 Y = MergedVertices[v].Y;
+		const int32 X = MergedVertices[v].X;
+		const int32 Y = MergedVertices[v].Y;
 
+		
 		for (int i = -1; i <= 1; i++)
 		{
 			for (int j = -1; j <= 1; j++)
@@ -461,31 +476,36 @@ void UMyBlueprintFunctionLibrary::CalculateEdges(UTexture2D* Texture2D)
 				{
 					CellUniqueNumbers.Add(NeighborSeed, CellNumber++);
 				}
-				
 				CurrentVerticesEdgesStruct.CurrentCellsUniqueNumbers.Add(CellUniqueNumbers[NeighborSeed]);
+				
 			}
 		}
 
 		
+		
 		VerticesEdges.Add(CurrentVerticesEdgesStruct);
+		
+		FString VertexPositionStr = FString::Printf(TEXT("Vertex Position: (%f, %f)"), CurrentVerticesEdgesStruct.VertexPosition.X, CurrentVerticesEdgesStruct.VertexPosition.Y);
+		FString CellNumbersStr = TEXT("Unique Cell Numbers: ");
+    
+		for (int Element : CurrentVerticesEdgesStruct.CurrentCellsUniqueNumbers)
+		{
+			CellNumbersStr += FString::Printf(TEXT("%d "), Element);
+		}
+    
+		UE_LOG(LogTemp, Warning, TEXT("%s | %s"), *VertexPositionStr, *CellNumbersStr);
+		
 	}
 	
 }
 
-void UMyBlueprintFunctionLibrary::PrintVerticesEdges()
+void UMyBlueprintFunctionLibrary::GroupVerticesWithSharedCells()
 {
-	
-	for (int i =0; i<VerticesEdges.Num(); i++)
+	for(int i = 0; i<VerticesEdges.Num();i++)
 	{
+	
+
+
 		
-		FString VertexPositionStr = FString::Printf(TEXT("Vertex Position: (%f, %f)"), VerticesEdges[i].VertexPosition.X, VerticesEdges[i].VertexPosition.Y);
-		FString CellNumbersStr = TEXT("Unique Cell Numbers: ");
-		
-		for (int j =0; j < VerticesEdges[i].CurrentCellsUniqueNumbers.Num(); j++)
-		{
-			CellNumbersStr += FString::Printf(TEXT("%d "), VerticesEdges[i].CurrentCellsUniqueNumbers[j]);
-		}
-		
-		UE_LOG(LogTemp, Warning, TEXT("%s | %s"), *VertexPositionStr, *CellNumbersStr);
 	}
 }
