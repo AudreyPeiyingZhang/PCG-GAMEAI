@@ -24,6 +24,20 @@ public:
 	
 };
 
+USTRUCT(BlueprintType)
+struct FPairedVertices
+{
+	GENERATED_BODY()
+public:
+
+	FVector2D FirstVertex;
+	FVector2D SecondVertex;
+	
+	
+};
+
+
+
 
 UCLASS()
 class PROJECT_API UMyBlueprintFunctionLibrary : public UBlueprintFunctionLibrary
@@ -64,6 +78,8 @@ public:
 	static void CalculateEdges(UTexture2D* Texture2D);
 	UFUNCTION(BlueprintCallable, Category = "Edges Calculation")
 	static void GroupVerticesWithSharedCells();
+	UFUNCTION(BlueprintCallable, Category = "Edges Calculation")
+	static void PrintPairedVertices();
 	
 public:	
 	static TArray<FVector2D> VoronoiSeeds;
@@ -77,6 +93,7 @@ public:
 	static void InitializeClosestCellVoronoiSeedXY(UTexture2D* Texture2D);
 	static TArray<FVerticesEdgesStruct> VerticesEdges;
 	static TMap<FVector2D, int32> CellUniqueNumbers;
+	static TArray<FPairedVertices> PairedVertices;
 		
 
 	//function to make texture 2d

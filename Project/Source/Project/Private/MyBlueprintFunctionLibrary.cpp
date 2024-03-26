@@ -89,6 +89,7 @@ TArray<TArray<FVector2D>> UMyBlueprintFunctionLibrary::ClosestCellVoronoiSeedXY;
 TSet<int32> FVerticesEdgesStruct::CurrentCellsUniqueNumbers;
 TArray<FVerticesEdgesStruct> UMyBlueprintFunctionLibrary::VerticesEdges;
 TMap<FVector2D, int32> UMyBlueprintFunctionLibrary::CellUniqueNumbers;
+TArray<FPairedVertices> UMyBlueprintFunctionLibrary::PairedVertices;
 
 void UMyBlueprintFunctionLibrary::InitializeClosestCellVoronoiSeedXY(UTexture2D* Texture2D)
 {
@@ -453,6 +454,7 @@ void UMyBlueprintFunctionLibrary::CalculateEdges(UTexture2D* Texture2D)
 	const int32 Height = Texture2D->GetSizeY();
 
 	int32 CellNumber = 0;
+	VerticesEdges.Empty();
 
 	for (int v = 0; v < MergedVertices.Num(); v++)
 	{
@@ -503,9 +505,47 @@ void UMyBlueprintFunctionLibrary::GroupVerticesWithSharedCells()
 {
 	for(int i = 0; i<VerticesEdges.Num();i++)
 	{
-	
+		FVerticesEdgesStruct CurrentVertex = VerticesEdges[i];
+		
+		for(int j = i+1; j<VerticesEdges.Num();j++)
+		{
+			int SharedCellNumber = 0;
+			for(int CellNumber : CurrentVertex.CurrentCellsUniqueNumbers)
+			{
+				if(VerticesEdges[j].CurrentCellsUniqueNumbers.Contains(CellNumber))
+				{
+					SharedCellNumber++;
+				}
+			}
+			
+			if(SharedCellNumber>=2)
+			{
+				FPairedVertices CurrentPairedVertices;
+				CurrentPairedVertices.FirstVertex = CurrentVertex.VertexPosition;
+				CurrentPairedVertices.SecondVertex = VerticesEdges[j].VertexPosition;
+				PairedVertices.Add(CurrentPairedVertices);
+				UE_LOG(LogTemp, Warning, TEXT("First Vertex: (%f, %f), Second Vertex: (%f, %f)"),
+				CurrentPairedVertices.FirstVertex.X, CurrentPairedVertices.FirstVertex.Y,
+				CurrentPairedVertices.SecondVertex.X, CurrentPairedVertices.SecondVertex.Y);
+				
+			}
+		}
+
+		
 
 
 		
 	}
 }
+
+void UMyBlueprintFunctionLibrary::PrintPairedVertices()
+{
+	for (const FPairedVertices& PairedVertex : PairedVertices)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("First Vertex: (%f, %f), Second Vertex: (%f, %f)"),
+			PairedVertex.FirstVertex.X, PairedVertex.FirstVertex.Y,
+			PairedVertex.SecondVertex.X, PairedVertex.SecondVertex.Y);
+	}
+}
+
+

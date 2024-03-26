@@ -56,7 +56,7 @@ void ATexture2DGeneration::BeginPlay()
 	UMyBlueprintFunctionLibrary::DrawMergedVerticesOnTexture2D(pTexture, FColor::Green);
 	UMyBlueprintFunctionLibrary::CalculateEdges(pTexture);
 	UMyBlueprintFunctionLibrary::GroupVerticesWithSharedCells();
-	
+	//UMyBlueprintFunctionLibrary::PrintPairedVertices();
 }
 
 // Called every frame
