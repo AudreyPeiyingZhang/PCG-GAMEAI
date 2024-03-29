@@ -265,8 +265,12 @@ void UMyBlueprintFunctionLibrary::DrawVoronoiOnTexture2D(UTexture2D* Texture2D, 
 				{
 					const FVector2D CurrentCellXY = FVector2D(CellXY.X + i, CellXY.Y +j);
 					if(CurrentCellXY.X < 0 || CurrentCellXY.Y < 0 || CurrentCellXY.X >=CellCount || CurrentCellXY.Y >=CellCount) continue;
-					FVector2D CurrentCellPixelXY = FVector2D(PixelsInEachCellX* CurrentCellXY.X,PixelsInEachCellY* CurrentCellXY.Y );
-					FVector2D VoronoiSeedPixelXY = CurrentCellPixelXY + FMath::Floor(FMath::Lerp(0, PixelsInEachCellX, RandomVector2DtoVector2D(CurrentCellPixelXY).X));
+					const FVector2D CurrentCellPixelXY = FVector2D(PixelsInEachCellX* CurrentCellXY.X,PixelsInEachCellY* CurrentCellXY.Y);
+					const int32 RandomX = FMath::Floor(FMath::Lerp(PixelsInEachCellX/3, (PixelsInEachCellX/3)*2, RandomVector2DtoVector2D(CurrentCellPixelXY).X));
+					const int32 RandomY = FMath::Floor(FMath::Lerp(PixelsInEachCellY/3, (PixelsInEachCellY/3)*2, RandomVector2DtoVector2D(CurrentCellPixelXY).Y));
+						
+					FVector2D VoronoiSeedPixelXY = FVector2D((CurrentCellPixelXY.X + RandomX), (CurrentCellPixelXY.Y + RandomY));
+					
 					VoronoiSeeds.Add(VoronoiSeedPixelXY);
 					FVector2D CurrentPixelToVoronoiSeed = (FVector2D(X,Y) - VoronoiSeedPixelXY);
 					const float Dist = CurrentPixelToVoronoiSeed.Length();
@@ -444,7 +448,7 @@ void UMyBlueprintFunctionLibrary::MergeCloseVertices(float MergeDistance)
 		}
 
 		FVector2D MergedPosition = FVector2D(0,0);
-		FVector2D MostAccurateVertex = FVector2D(0,0);
+		FVerticesEdgesStruct MostAccurateVertex;
 
 		for(int X = 0; X<ClusterVertices.Num(); X++)
 		{
@@ -453,23 +457,24 @@ void UMyBlueprintFunctionLibrary::MergeCloseVertices(float MergeDistance)
 
 		MergedPosition /= ClusterVertices.Num();
 		float Distance = FLT_MAX;
+		TArray<int> UniqueCells;
 
 		for(int Y = 0; Y<ClusterVertices.Num(); Y++)
 		{
-			FVector2D CurrentVertexPos = ClusterVertices[Y].VertexPosition;
-			const float CurrentDist = (CurrentVertexPos-MergedPosition).Length();
+			FVerticesEdgesStruct CurrentVertex = ClusterVertices[Y];
+			const float CurrentDist = (CurrentVertex.VertexPosition-MergedPosition).Length();
 			if(CurrentDist < Distance)
 			{
 				Distance = CurrentDist;
-				MostAccurateVertex = CurrentVertexPos;
+				MostAccurateVertex = CurrentVertex;
+			
 				
 			}
 		}
 		//MergedPosition.X = FMath::RoundToInt(MergedPosition.X);
 		//MergedPosition.Y = FMath::RoundToInt(MergedPosition.Y);
 		FVerticesEdgesStruct NewStruct;
-		NewStruct.VertexPosition = MostAccurateVertex;
-		NewStruct.CurrentCellsUniqueNumbers = CellNums;
+		NewStruct = MostAccurateVertex;
 		MergedVerticesEdges.Add(NewStruct);
 		
 		

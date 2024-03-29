@@ -25,9 +25,9 @@ void ATexture2DGeneration::BeginPlay()
 {
 	Super::BeginPlay();
 	constexpr int CellCount = 10;
-	constexpr float MergeDistance = 5.0f;
+	constexpr float MergeDistance = 3.0f;
 	//create texture2d
-	pTexture = UMyBlueprintFunctionLibrary::CreateTexture2D(200,200);
+	pTexture = UMyBlueprintFunctionLibrary::CreateTexture2D(400,400);
 	//set texture to material
 	MaterialInstance = UMaterialInstanceDynamic::Create(MaterialInterface, this);
 	MaterialInstance->SetTextureParameterValue(FName("BaseTexture"), pTexture);
