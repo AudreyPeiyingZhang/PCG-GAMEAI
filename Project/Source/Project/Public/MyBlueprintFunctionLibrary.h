@@ -3,7 +3,6 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "Kismet/BlueprintFunctionLibrary.h"
 #include "MyBlueprintFunctionLibrary.generated.h"
 
 /**
@@ -17,8 +16,8 @@ struct FVerticesEdgesStruct
 
 public:
 
-	inline static FVector2D VertexPosition;
-	static TSet<int32> CurrentCellsUniqueNumbers;
+	FVector2D VertexPosition;
+	TSet<int32> CurrentCellsUniqueNumbers;
 
 
 	
@@ -32,6 +31,21 @@ public:
 
 	FVector2D FirstVertex;
 	FVector2D SecondVertex;
+
+	FPairedVertices() {}
+	
+	FPairedVertices(FVector2D InFirstVertex, FVector2D InSecondVertex)
+	: FirstVertex(InFirstVertex), SecondVertex(InSecondVertex) {}
+	
+	bool IsEquivalent(const FPairedVertices& Other) const
+	{
+		
+		return (FirstVertex == Other.FirstVertex && SecondVertex == Other.SecondVertex) ||
+			   (FirstVertex == Other.SecondVertex && SecondVertex == Other.FirstVertex);
+		
+	}
+
+	
 	
 	
 };
@@ -70,16 +84,21 @@ public:
 	static void CalculateVertices(UTexture2D* Texture2D);
 	UFUNCTION(BlueprintCallable, Category = "Vertices Calculation")
 	static void DrawVerticesOnTexture2D(UTexture2D* Texture2D,FColor color);
+	UFUNCTION(BlueprintCallable, Category = "Edges Calculation")
+	static void AssignCellNumbers(UTexture2D* Texture2D);
 	UFUNCTION(BlueprintCallable, Category = "Vertices Calculation")
 	static void MergeCloseVertices(float MergeDistance);
 	UFUNCTION(BlueprintCallable, Category = "Vertices Calculation")
 	static void DrawMergedVerticesOnTexture2D(UTexture2D* Texture2D,FColor color);
 	UFUNCTION(BlueprintCallable, Category = "Edges Calculation")
-	static void CalculateEdges(UTexture2D* Texture2D);
+	static void PrintVertexPosAndUniqueCellNumber();
 	UFUNCTION(BlueprintCallable, Category = "Edges Calculation")
 	static void GroupVerticesWithSharedCells();
 	UFUNCTION(BlueprintCallable, Category = "Edges Calculation")
 	static void PrintPairedVertices();
+	UFUNCTION(BlueprintCallable, Category = "Edges Calculation")
+	static void DrawDebugEdges(UWorld* World);
+
 	
 public:	
 	static TArray<FVector2D> VoronoiSeeds;
@@ -91,7 +110,8 @@ public:
 	static void InitializeGradientField(UTexture2D* Texture2D);
 	static TArray<TArray<FVector2D>> ClosestCellVoronoiSeedXY;
 	static void InitializeClosestCellVoronoiSeedXY(UTexture2D* Texture2D);
-	static TArray<FVerticesEdgesStruct> VerticesEdges;
+	static TArray<FVerticesEdgesStruct> VerticesWithUniqueCellNumber;
+	static TArray<FVerticesEdgesStruct> MergedVerticesEdges;
 	static TMap<FVector2D, int32> CellUniqueNumbers;
 	static TArray<FPairedVertices> PairedVertices;
 		

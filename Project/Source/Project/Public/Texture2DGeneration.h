@@ -3,7 +3,6 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "Engine/CanvasRenderTarget2D.h"
 #include "GameFramework/Actor.h"
 #include "Texture2DGeneration.generated.h"
 

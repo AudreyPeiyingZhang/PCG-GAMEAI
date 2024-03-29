@@ -52,11 +52,14 @@ void ATexture2DGeneration::BeginPlay()
 	UMyBlueprintFunctionLibrary::DrawVoronoiSeedsOnTexture2D(pTexture, FColor::Black);
 	UMyBlueprintFunctionLibrary::CalculateVertices(pTexture);
 	//UMyBlueprintFunctionLibrary::DrawVerticesOnTexture2D(pTexture,FColor::Yellow);
+	UMyBlueprintFunctionLibrary::AssignCellNumbers(pTexture);
 	UMyBlueprintFunctionLibrary::MergeCloseVertices(MergeDistance);
 	UMyBlueprintFunctionLibrary::DrawMergedVerticesOnTexture2D(pTexture, FColor::Green);
-	UMyBlueprintFunctionLibrary::CalculateEdges(pTexture);
+	UMyBlueprintFunctionLibrary::PrintVertexPosAndUniqueCellNumber();
 	UMyBlueprintFunctionLibrary::GroupVerticesWithSharedCells();
-	//UMyBlueprintFunctionLibrary::PrintPairedVertices();
+	UMyBlueprintFunctionLibrary::PrintPairedVertices();
+	UMyBlueprintFunctionLibrary::DrawDebugEdges(GetWorld());
+	
 }
 
 // Called every frame
