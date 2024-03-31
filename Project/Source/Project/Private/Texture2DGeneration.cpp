@@ -25,9 +25,9 @@ void ATexture2DGeneration::BeginPlay()
 {
 	Super::BeginPlay();
 	constexpr int CellCount = 10;
-	constexpr float MergeDistance = 3.0f;
+
 	//create texture2d
-	pTexture = UMyBlueprintFunctionLibrary::CreateTexture2D(400,400);
+	pTexture = UMyBlueprintFunctionLibrary::CreateTexture2D(200,200);
 	//set texture to material
 	MaterialInstance = UMaterialInstanceDynamic::Create(MaterialInterface, this);
 	MaterialInstance->SetTextureParameterValue(FName("BaseTexture"), pTexture);
@@ -53,7 +53,7 @@ void ATexture2DGeneration::BeginPlay()
 	UMyBlueprintFunctionLibrary::CalculateVertices(pTexture);
 	//UMyBlueprintFunctionLibrary::DrawVerticesOnTexture2D(pTexture,FColor::Yellow);
 	UMyBlueprintFunctionLibrary::AssignCellNumbers(pTexture);
-	UMyBlueprintFunctionLibrary::MergeCloseVertices(MergeDistance);
+	UMyBlueprintFunctionLibrary::MergeSameCornerVertices();
 	UMyBlueprintFunctionLibrary::DrawMergedVerticesOnTexture2D(pTexture, FColor::Green);
 	UMyBlueprintFunctionLibrary::PrintVertexPosAndUniqueCellNumber();
 	UMyBlueprintFunctionLibrary::GroupVerticesWithSharedCells();

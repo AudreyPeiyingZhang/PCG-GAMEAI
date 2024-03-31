@@ -414,7 +414,7 @@ void UMyBlueprintFunctionLibrary::AssignCellNumbers(UTexture2D* Texture2D)
 	
 }
 
-void UMyBlueprintFunctionLibrary::MergeCloseVertices(float MergeDistance)
+/*void UMyBlueprintFunctionLibrary::MergeCloseVertices(float MergeDistance)
 {
 	TArray<bool> isVertexMerged;
 	isVertexMerged.Init(false, VerticesWithUniqueCellNumber.Num());
@@ -457,7 +457,7 @@ void UMyBlueprintFunctionLibrary::MergeCloseVertices(float MergeDistance)
 
 		MergedPosition /= ClusterVertices.Num();
 		float Distance = FLT_MAX;
-		TArray<int> UniqueCells;
+		
 
 		for(int Y = 0; Y<ClusterVertices.Num(); Y++)
 		{
@@ -474,7 +474,8 @@ void UMyBlueprintFunctionLibrary::MergeCloseVertices(float MergeDistance)
 		//MergedPosition.X = FMath::RoundToInt(MergedPosition.X);
 		//MergedPosition.Y = FMath::RoundToInt(MergedPosition.Y);
 		FVerticesEdgesStruct NewStruct;
-		NewStruct = MostAccurateVertex;
+		NewStruct.VertexPosition = MostAccurateVertex.VertexPosition;
+		NewStruct.CurrentCellsUniqueNumbers = CellNums;
 		MergedVerticesEdges.Add(NewStruct);
 		
 		
@@ -488,7 +489,73 @@ void UMyBlueprintFunctionLibrary::MergeCloseVertices(float MergeDistance)
 	}
 	UE_LOG(LogTemp, Warning, TEXT("Number of vertices: %i"), MergedVerticesEdges.Num());
 	
+}*/
+
+
+void UMyBlueprintFunctionLibrary::MergeSameCornerVertices()
+{
+	TArray<bool> isVertexClustered;
+	isVertexClustered.Init(false, VerticesWithUniqueCellNumber.Num());
+	
+	for (int i = 0; i < VerticesWithUniqueCellNumber.Num(); i++)
+	{
+		if(isVertexClustered[i]) continue;
+		FVerticesEdgesStruct CurrentVertex = VerticesWithUniqueCellNumber[i];
+		
+		TArray<FVerticesEdgesStruct> ToCluster;
+		ToCluster.Empty();
+		ToCluster.Add(CurrentVertex);
+		
+		for(int j = i+1; j < VerticesWithUniqueCellNumber.Num(); j++)
+		{
+			if(isVertexClustered[j]) continue; 
+			if(CurrentVertex.IsEquivalent(VerticesWithUniqueCellNumber[j]))
+			{
+				ToCluster.Add(VerticesWithUniqueCellNumber[j]);
+				isVertexClustered[j] = true;	
+			}
+			
+		}
+
+		
+		FVector2D MergedPosition = FVector2D(0,0);
+		for(int k = 0; k<ToCluster.Num();k++)
+		{
+			MergedPosition += ToCluster[k].VertexPosition;
+		}
+
+		MergedPosition /= ToCluster.Num();
+		float Distance = FLT_MAX;
+
+		FVerticesEdgesStruct MostAccurateVertex;
+		for(int Y = 0; Y<ToCluster.Num(); Y++)
+		{
+			FVerticesEdgesStruct CurrentClusterVertex = ToCluster[Y];
+			const float CurrentDist = (CurrentClusterVertex.VertexPosition-MergedPosition).Length();
+			if(ToCluster.Num()==2)
+			{
+				MostAccurateVertex = CurrentClusterVertex;
+				break;
+			}
+			
+			if(CurrentDist < Distance)
+			{
+				Distance = CurrentDist;
+				MostAccurateVertex = CurrentClusterVertex;
+			
+				
+			}
+		}
+
+		FVerticesEdgesStruct NewStruct = MostAccurateVertex;
+
+		MergedVerticesEdges.Add(NewStruct);
+		
+	}
+	UE_LOG(LogTemp, Warning, TEXT("Number of vertices: %i"), MergedVerticesEdges.Num());
+	
 }
+
 
 void UMyBlueprintFunctionLibrary::DrawMergedVerticesOnTexture2D(UTexture2D* Texture2D, FColor color)
 {

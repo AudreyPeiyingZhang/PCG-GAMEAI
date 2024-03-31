@@ -19,6 +19,24 @@ public:
 	FVector2D VertexPosition;
 	TSet<int32> CurrentCellsUniqueNumbers;
 
+	bool IsEquivalent(const FVerticesEdgesStruct& Other) const
+	{
+		if (CurrentCellsUniqueNumbers.Num() != Other.CurrentCellsUniqueNumbers.Num())
+		{
+			return false; 
+		}
+
+		for (const int32 Element : CurrentCellsUniqueNumbers)
+		{
+			if (!Other.CurrentCellsUniqueNumbers.Contains(Element))
+			{
+				return false;
+			}
+		}
+
+		return true;
+	}
+
 
 	
 };
@@ -87,7 +105,7 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Edges Calculation")
 	static void AssignCellNumbers(UTexture2D* Texture2D);
 	UFUNCTION(BlueprintCallable, Category = "Vertices Calculation")
-	static void MergeCloseVertices(float MergeDistance);
+	static void MergeSameCornerVertices();
 	UFUNCTION(BlueprintCallable, Category = "Vertices Calculation")
 	static void DrawMergedVerticesOnTexture2D(UTexture2D* Texture2D,FColor color);
 	UFUNCTION(BlueprintCallable, Category = "Edges Calculation")
