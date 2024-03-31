@@ -266,8 +266,8 @@ void UMyBlueprintFunctionLibrary::DrawVoronoiOnTexture2D(UTexture2D* Texture2D, 
 					const FVector2D CurrentCellXY = FVector2D(CellXY.X + i, CellXY.Y +j);
 					if(CurrentCellXY.X < 0 || CurrentCellXY.Y < 0 || CurrentCellXY.X >=CellCount || CurrentCellXY.Y >=CellCount) continue;
 					const FVector2D CurrentCellPixelXY = FVector2D(PixelsInEachCellX* CurrentCellXY.X,PixelsInEachCellY* CurrentCellXY.Y);
-					const int32 RandomX = FMath::Floor(FMath::Lerp(PixelsInEachCellX/3, (PixelsInEachCellX/3)*2, RandomVector2DtoVector2D(CurrentCellPixelXY).X));
-					const int32 RandomY = FMath::Floor(FMath::Lerp(PixelsInEachCellY/3, (PixelsInEachCellY/3)*2, RandomVector2DtoVector2D(CurrentCellPixelXY).Y));
+					const int32 RandomX = FMath::Floor(FMath::Lerp(0, PixelsInEachCellX, RandomVector2DtoVector2D(CurrentCellPixelXY).X));
+					const int32 RandomY = FMath::Floor(FMath::Lerp(0, PixelsInEachCellY, RandomVector2DtoVector2D(CurrentCellPixelXY).Y));
 						
 					FVector2D VoronoiSeedPixelXY = FVector2D((CurrentCellPixelXY.X + RandomX), (CurrentCellPixelXY.Y + RandomY));
 					
@@ -325,7 +325,7 @@ void UMyBlueprintFunctionLibrary::CalculateVertices(UTexture2D* Texture2D)
 				}
 			}
 
-
+			
 
 			if(UniqueSeeds.Num() >= 3)
 			{
@@ -334,6 +334,44 @@ void UMyBlueprintFunctionLibrary::CalculateVertices(UTexture2D* Texture2D)
 				
 				
 			}
+			/*TArray<float> Distance;
+			for(FVector2D Element : UniqueSeeds)
+			{
+				float Dist = (Element - FVector2D(X,Y)).Length();
+				Distance.Add(Dist);
+				
+				
+			}
+			
+			
+			bool AllEqual = true;
+			float FirstValue = Distance[0];
+			for (int i = 1; i < Distance.Num(); ++i)
+			{
+				if (FMath::IsNearlyEqual(Distance[i], FirstValue, 0.0001f))
+				{
+					AllEqual = false;
+					break;
+				}
+			}
+			if(AllEqual)
+			{
+				for (int32 k = 0; k < Distance.Num(); k++)
+				{
+					UE_LOG(LogTemp, Warning, TEXT("Distance[%d] = %f"), k, Distance[k]);
+				}
+				int ii = 0;
+				for (FVector2D Element : UniqueSeeds)
+				{
+				
+					ii++;
+					UE_LOG(LogTemp, Warning, TEXT("UniqueSeeds[%d] = (%f, %f)"), ii, Element.X, Element.Y);
+				}
+				if(UniqueSeeds.Num() >= 3)
+				{
+					Vertices.Add(FVector2D(X, Y));
+				}*/
+				
 			
 			
 		}
@@ -673,7 +711,7 @@ void UMyBlueprintFunctionLibrary::DrawDebugEdges(UWorld* World)
 		
 		FVector StartPos = FVector(PairedVertex.FirstVertex.X, PairedVertex.FirstVertex.Y, 0.5f);
 		FVector EndPos = FVector(PairedVertex.SecondVertex.X, PairedVertex.SecondVertex.Y, 0.5f);
-		DrawDebugLine(World, StartPos, EndPos, FColor::Red, false, 10000.0f, 0,1.0f);
+		DrawDebugLine(World, StartPos, EndPos, FColor::Red, false, 10000.0f, 0,0.25f);
 		
 	}
 	
