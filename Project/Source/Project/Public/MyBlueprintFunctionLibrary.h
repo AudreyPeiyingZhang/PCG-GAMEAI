@@ -19,22 +19,26 @@ public:
 	FVector2D VertexPosition;
 	TSet<int32> CurrentCellsUniqueNumbers;
 
-	bool IsEquivalent(const FVerticesEdgesStruct& Other) const
+	bool IsEquivalent( const FVerticesEdgesStruct Other) const
 	{
-		if (CurrentCellsUniqueNumbers.Num() != Other.CurrentCellsUniqueNumbers.Num())
-		{
-			return false; 
-		}
 
+		int Count = 0;
 		for (const int32 Element : CurrentCellsUniqueNumbers)
 		{
-			if (!Other.CurrentCellsUniqueNumbers.Contains(Element))
+			if (Other.CurrentCellsUniqueNumbers.Contains(Element))
 			{
-				return false;
+				Count++;
+				
+				
 			}
 		}
 
-		return true;
+		if(Count>=3)
+		{
+			return true;
+		}
+
+		return false;
 	}
 
 
@@ -107,7 +111,11 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Vertices Calculation")
 	static void MergeSameCornerVertices();
 	UFUNCTION(BlueprintCallable, Category = "Vertices Calculation")
+	static void Merge4CellCountVertices();
+	UFUNCTION(BlueprintCallable, Category = "Vertices Calculation")
 	static void DrawMergedVerticesOnTexture2D(UTexture2D* Texture2D,FColor color);
+	UFUNCTION(BlueprintCallable, Category = "Vertices Calculation HUD")
+	static void DrawVertexPositionsAndCellNumbersOnHUD(AHUD* HUD, APlayerController* PlayerController);
 	UFUNCTION(BlueprintCallable, Category = "Edges Calculation")
 	static void PrintVertexPosAndUniqueCellNumber();
 	UFUNCTION(BlueprintCallable, Category = "Edges Calculation")
@@ -116,6 +124,8 @@ public:
 	static void PrintPairedVertices();
 	UFUNCTION(BlueprintCallable, Category = "Edges Calculation")
 	static void DrawDebugEdges(UWorld* World);
+	static void Test();
+	
 
 	
 public:	
@@ -129,7 +139,8 @@ public:
 	static TArray<TArray<FVector2D>> ClosestCellVoronoiSeedXY;
 	static void InitializeClosestCellVoronoiSeedXY(UTexture2D* Texture2D);
 	static TArray<FVerticesEdgesStruct> VerticesWithUniqueCellNumber;
-	static TArray<FVerticesEdgesStruct> MergedVerticesEdges;
+	static TArray<FVerticesEdgesStruct> MergedCornerVerticesEdges;
+	static TArray<FVerticesEdgesStruct> Merged4CellCountVerticesEdges;
 	static TMap<FVector2D, int32> CellUniqueNumbers;
 	static TArray<FPairedVertices> PairedVertices;
 		

@@ -31,6 +31,8 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Material")
 	UMaterialInterface* MaterialInterface;
 
+
+
 	
 
 };

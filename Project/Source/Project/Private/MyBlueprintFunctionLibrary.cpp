@@ -2,7 +2,7 @@
 
 
 #include "MyBlueprintFunctionLibrary.h"
-
+#include "GameFramework/HUD.h"
 
 UTexture2D* UMyBlueprintFunctionLibrary::CreateTexture2D(int32 Width, int32 Height)
 {
@@ -57,8 +57,8 @@ float UMyBlueprintFunctionLibrary::RandomVector2DtoVector1D (FVector2D Vector2D,
 
 FVector2D UMyBlueprintFunctionLibrary::RandomVector2DtoVector2D(FVector2D Vector2D)
 {
-	Vector2D.X = RandomVector2DtoVector1D(Vector2D, FVector2D(8.453, 7.983), 6.4, 20.12);
-	Vector2D.Y = RandomVector2DtoVector1D(Vector2D, FVector2D(4.912, 10.902), -1.8, 8.54);
+	Vector2D.X = RandomVector2DtoVector1D(Vector2D, FVector2D(3.453, 2.983), 5.4, 12.12);
+	Vector2D.Y = RandomVector2DtoVector1D(Vector2D, FVector2D(5.932, 7.652), -5.8, 4.56);
 	return Vector2D;
 	
 }
@@ -87,7 +87,8 @@ TArray<TArray<float>> UMyBlueprintFunctionLibrary::DistField;
 TArray<TArray<float>> UMyBlueprintFunctionLibrary::GradientField;
 TArray<TArray<FVector2D>> UMyBlueprintFunctionLibrary::ClosestCellVoronoiSeedXY;
 TArray<FVerticesEdgesStruct> UMyBlueprintFunctionLibrary::VerticesWithUniqueCellNumber;
-TArray<FVerticesEdgesStruct> UMyBlueprintFunctionLibrary::MergedVerticesEdges;
+TArray<FVerticesEdgesStruct> UMyBlueprintFunctionLibrary::MergedCornerVerticesEdges;
+TArray<FVerticesEdgesStruct> UMyBlueprintFunctionLibrary::Merged4CellCountVerticesEdges;
 TMap<FVector2D, int32> UMyBlueprintFunctionLibrary::CellUniqueNumbers;
 TArray<FPairedVertices> UMyBlueprintFunctionLibrary::PairedVertices;
 
@@ -587,11 +588,42 @@ void UMyBlueprintFunctionLibrary::MergeSameCornerVertices()
 
 		FVerticesEdgesStruct NewStruct = MostAccurateVertex;
 
-		MergedVerticesEdges.Add(NewStruct);
+		MergedCornerVerticesEdges.Add(NewStruct);
 		
 	}
-	UE_LOG(LogTemp, Warning, TEXT("Number of vertices: %i"), MergedVerticesEdges.Num());
+	UE_LOG(LogTemp, Warning, TEXT("Number of vertices: %i"), MergedCornerVerticesEdges.Num());
 	
+}
+
+void UMyBlueprintFunctionLibrary::Merge4CellCountVertices()
+{
+	TArray<bool> isVertexClustered;
+	isVertexClustered.Init(false, MergedCornerVerticesEdges.Num());
+
+	for (int32 i = 0; i < MergedCornerVerticesEdges.Num(); i++)
+	{
+		FVerticesEdgesStruct CurrentVertex = MergedCornerVerticesEdges[i];
+		if(CurrentVertex.CurrentCellsUniqueNumbers.Num() >= 4)
+		{
+			for(int32 j = 0; j<MergedCornerVerticesEdges.Num(); j++)
+			{
+				if(j!=i && CurrentVertex.IsEquivalent(MergedCornerVerticesEdges[j]))
+				{
+					isVertexClustered[j] = true;
+				}
+			}
+		}
+	
+	}
+	for(int32 k = 0; k< MergedCornerVerticesEdges.Num();k++)
+	{
+		if(!isVertexClustered[k])
+		{
+			Merged4CellCountVerticesEdges.Add(MergedCornerVerticesEdges[k]);
+		}
+	}
+	
+	UE_LOG(LogTemp, Warning, TEXT("Total vertices merged: %d"), Merged4CellCountVerticesEdges.Num());
 }
 
 
@@ -601,7 +633,7 @@ void UMyBlueprintFunctionLibrary::DrawMergedVerticesOnTexture2D(UTexture2D* Text
 	const int32 Height = Texture2D->GetSizeY();
 	FByteBulkData* RawImageDataOut = &Texture2D->GetPlatformData()->Mips[0].BulkData;
 	FColor* FormatedImageDataOut = static_cast<FColor*>(RawImageDataOut->Lock(LOCK_READ_WRITE));
-	for(int i = 0; i<MergedVerticesEdges.Num(); i++)
+	for(int i = 0; i<Merged4CellCountVerticesEdges.Num(); i++)
 	{
         
 		for (int X = 0; X < Width; X++)
@@ -609,7 +641,7 @@ void UMyBlueprintFunctionLibrary::DrawMergedVerticesOnTexture2D(UTexture2D* Text
 			for(int Y = 0; Y < Height; Y++)
 			{
 				
-				if(MergedVerticesEdges[i].VertexPosition.X == X && MergedVerticesEdges[i].VertexPosition.Y ==Y)
+				if(Merged4CellCountVerticesEdges[i].VertexPosition.X == X && Merged4CellCountVerticesEdges[i].VertexPosition.Y ==Y)
 				{
 					FormatedImageDataOut[(Y * Width) + X] = color;
 				}
@@ -626,7 +658,7 @@ void UMyBlueprintFunctionLibrary::DrawMergedVerticesOnTexture2D(UTexture2D* Text
 
 void UMyBlueprintFunctionLibrary::PrintVertexPosAndUniqueCellNumber()
 {
-	for(FVerticesEdgesStruct Element :MergedVerticesEdges)
+	for(FVerticesEdgesStruct Element :Merged4CellCountVerticesEdges)
 	{
 		FString VertexPositionStr = FString::Printf(TEXT("Vertex Position: (%f, %f)"), Element.VertexPosition.X, Element.VertexPosition.Y);
 		FString CellNumbersStr = TEXT("Unique Cell Numbers: ");
@@ -641,23 +673,48 @@ void UMyBlueprintFunctionLibrary::PrintVertexPosAndUniqueCellNumber()
 		
 	}
 
-	UE_LOG(LogTemp, Warning, TEXT("Number of pairs: %i"), MergedVerticesEdges.Num());
+	UE_LOG(LogTemp, Warning, TEXT("Number of pairs: %i"), Merged4CellCountVerticesEdges.Num());
 
 	
 }
 
+
+void UMyBlueprintFunctionLibrary::DrawVertexPositionsAndCellNumbersOnHUD(AHUD* HUD, APlayerController* PlayerController)
+{
+	
+
+	
+	for (const FVerticesEdgesStruct& Element : Merged4CellCountVerticesEdges)
+	{
+		FVector2D ScreenSpace;
+
+		PlayerController->ProjectWorldLocationToScreen(FVector(Element.VertexPosition.X, Element.VertexPosition.Y, 0.0f), ScreenSpace);
+
+		//FString Text = FString::Printf(TEXT("Vertex Position: (%f, %f) | Cell Numbers: "), Element.VertexPosition.X, Element.VertexPosition.Y);
+		FString Text;
+		for (const int32 CellNumber : Element.CurrentCellsUniqueNumbers)
+		{
+			Text += FString::Printf(TEXT("%d "), CellNumber);
+		}
+
+		HUD->DrawText(Text,FLinearColor::White, ScreenSpace.X,ScreenSpace.Y);
+		
+	}
+}
+
+
 void UMyBlueprintFunctionLibrary::GroupVerticesWithSharedCells()
 {
-	for(int i = 0; i<MergedVerticesEdges.Num();i++)
+	for(int i = 0; i<Merged4CellCountVerticesEdges.Num();i++)
 	{
-		FVerticesEdgesStruct CurrentVertex = MergedVerticesEdges[i];
+		FVerticesEdgesStruct CurrentVertex = Merged4CellCountVerticesEdges[i];
 		
-		for(int j = i+1; j<MergedVerticesEdges.Num();j++)
+		for(int j = i+1; j<Merged4CellCountVerticesEdges.Num();j++)
 		{
 			int SharedCellNumber = 0;
 			for(const int CellNumber : CurrentVertex.CurrentCellsUniqueNumbers)
 			{
-				if(MergedVerticesEdges[j].CurrentCellsUniqueNumbers.Contains(CellNumber))
+				if(Merged4CellCountVerticesEdges[j].CurrentCellsUniqueNumbers.Contains(CellNumber))
 				{
 					SharedCellNumber++;
 				}
@@ -665,7 +722,7 @@ void UMyBlueprintFunctionLibrary::GroupVerticesWithSharedCells()
 			
 			if(SharedCellNumber==2)
 			{
-				FPairedVertices CurrentPairedVertices (CurrentVertex.VertexPosition, MergedVerticesEdges[j].VertexPosition);
+				FPairedVertices CurrentPairedVertices (CurrentVertex.VertexPosition, Merged4CellCountVerticesEdges[j].VertexPosition);
 				bool bIsNewPairUnique = true;
 				for(const FPairedVertices& ExistingPair : PairedVertices)
 				{
@@ -715,4 +772,29 @@ void UMyBlueprintFunctionLibrary::DrawDebugEdges(UWorld* World)
 		
 	}
 	
+}
+
+void UMyBlueprintFunctionLibrary::Test()
+{
+	FVerticesEdgesStruct VertexA;
+	VertexA.CurrentCellsUniqueNumbers.Add(1);
+	VertexA.CurrentCellsUniqueNumbers.Add(2);
+	VertexA.CurrentCellsUniqueNumbers.Add(3);
+	VertexA.CurrentCellsUniqueNumbers.Add(4);
+
+	FVerticesEdgesStruct VertexB;
+	VertexB.CurrentCellsUniqueNumbers.Add(3);
+	VertexB.CurrentCellsUniqueNumbers.Add(4);
+	VertexB.CurrentCellsUniqueNumbers.Add(5);
+	
+	FVerticesEdgesStruct VertexC;
+	VertexC.CurrentCellsUniqueNumbers.Add(1);
+	VertexC.CurrentCellsUniqueNumbers.Add(2);
+	VertexC.CurrentCellsUniqueNumbers.Add(3);
+
+	bool isEquivalentAB = VertexA.IsEquivalent(VertexB); // 应返回 false
+	bool isEquivalentAC = VertexC.IsEquivalent(VertexA); // 应返回 true
+	UE_LOG(LogTemp, Warning, TEXT("IsEquivalentAB (should be false): %s"), isEquivalentAB ? TEXT("true") : TEXT("false"));
+	UE_LOG(LogTemp, Warning, TEXT("IsEquivalentCA (should be true): %s"), isEquivalentAC ? TEXT("true") : TEXT("false"));
+
 }

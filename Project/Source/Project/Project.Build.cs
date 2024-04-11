@@ -10,7 +10,7 @@ public class Project : ModuleRules
 	
 		PublicDependencyModuleNames.AddRange(new string[] { "Core", "CoreUObject", "Engine", "InputCore", "ProceduralMeshComponent", "HeadMountedDisplay", "NavigationSystem", "AIModule", "Niagara", "GeometryScriptingEditor", "GeometryScriptingCore", "GeometryCore" });
 
-		PrivateDependencyModuleNames.AddRange(new string[] {  });
+		PrivateDependencyModuleNames.AddRange(new string[] { "DisplayClusterConfigurator" });
 
 		// Uncomment if you are using Slate UI
 		// PrivateDependencyModuleNames.AddRange(new string[] { "Slate", "SlateCore" });

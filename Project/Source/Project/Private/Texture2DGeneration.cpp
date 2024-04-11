@@ -18,6 +18,7 @@ ATexture2DGeneration::ATexture2DGeneration()
 	
 	
 	
+	
 }
 
 // Called when the game starts or when spawned
@@ -25,6 +26,7 @@ void ATexture2DGeneration::BeginPlay()
 {
 	Super::BeginPlay();
 	constexpr int CellCount = 10;
+	
 
 	//create texture2d
 	pTexture = UMyBlueprintFunctionLibrary::CreateTexture2D(200,200);
@@ -54,11 +56,14 @@ void ATexture2DGeneration::BeginPlay()
 	//UMyBlueprintFunctionLibrary::DrawVerticesOnTexture2D(pTexture,FColor::Cyan);
 	UMyBlueprintFunctionLibrary::AssignCellNumbers(pTexture);
 	UMyBlueprintFunctionLibrary::MergeSameCornerVertices();
+	UMyBlueprintFunctionLibrary::Merge4CellCountVertices();
 	UMyBlueprintFunctionLibrary::DrawMergedVerticesOnTexture2D(pTexture, FColor::Green);
 	UMyBlueprintFunctionLibrary::PrintVertexPosAndUniqueCellNumber();
+	
 	UMyBlueprintFunctionLibrary::GroupVerticesWithSharedCells();
 	UMyBlueprintFunctionLibrary::PrintPairedVertices();
 	UMyBlueprintFunctionLibrary::DrawDebugEdges(GetWorld());
+	UMyBlueprintFunctionLibrary::Test();
 	
 }
 
@@ -69,5 +74,4 @@ void ATexture2DGeneration::Tick(float DeltaTime)
 	
 
 }
-
 
