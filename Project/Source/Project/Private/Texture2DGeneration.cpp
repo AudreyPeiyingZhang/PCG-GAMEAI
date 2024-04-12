@@ -53,7 +53,8 @@ void ATexture2DGeneration::BeginPlay()
 	UMyBlueprintFunctionLibrary::DrawVoronoiOnTexture2D(pTexture,CellCount);
 	UMyBlueprintFunctionLibrary::DrawVoronoiSeedsOnTexture2D(pTexture, FColor::Black);
 	UMyBlueprintFunctionLibrary::CalculateVertices(pTexture);
-	//UMyBlueprintFunctionLibrary::DrawVerticesOnTexture2D(pTexture,FColor::Cyan);
+	UMyBlueprintFunctionLibrary::Add4VerticesOnWholeTextureCorner(pTexture);
+	UMyBlueprintFunctionLibrary::DrawVerticesOnTexture2D(pTexture,FColor::Cyan);
 	UMyBlueprintFunctionLibrary::AssignCellNumbers(pTexture);
 	UMyBlueprintFunctionLibrary::MergeSameCornerVertices();
 	UMyBlueprintFunctionLibrary::Merge4CellCountVertices();

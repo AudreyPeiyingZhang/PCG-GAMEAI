@@ -7,6 +7,7 @@
 UTexture2D* UMyBlueprintFunctionLibrary::CreateTexture2D(int32 Width, int32 Height)
 {
 	UTexture2D* Texture2D = UTexture2D::CreateTransient(Width, Height, PF_B8G8R8A8);
+	Texture2D->Filter=TF_Nearest;
 	Texture2D->NeverStream = true;
 	return Texture2D;
 	
@@ -302,7 +303,13 @@ void UMyBlueprintFunctionLibrary::DrawVoronoiOnTexture2D(UTexture2D* Texture2D, 
 	RawImageDataOut->Unlock();
 	Texture2D->UpdateResource();
 }
-
+//
+// void setPIxelvalue(int x, int y,int dx,int dy)
+// {
+// 	
+// 	((int16*)(FormatedImageDataOut[(Y * Width) + X]))[0]=dx;
+// 	((int16*)(FormatedImageDataOut[(Y * Width) + X]))[1]=dy;
+// }
 void UMyBlueprintFunctionLibrary::CalculateVertices(UTexture2D* Texture2D)
 {
 	const int32 Width = Texture2D->GetSizeX();
@@ -335,50 +342,26 @@ void UMyBlueprintFunctionLibrary::CalculateVertices(UTexture2D* Texture2D)
 				
 				
 			}
-			/*TArray<float> Distance;
-			for(FVector2D Element : UniqueSeeds)
-			{
-				float Dist = (Element - FVector2D(X,Y)).Length();
-				Distance.Add(Dist);
-				
-				
-			}
-			
-			
-			bool AllEqual = true;
-			float FirstValue = Distance[0];
-			for (int i = 1; i < Distance.Num(); ++i)
-			{
-				if (FMath::IsNearlyEqual(Distance[i], FirstValue, 0.0001f))
-				{
-					AllEqual = false;
-					break;
-				}
-			}
-			if(AllEqual)
-			{
-				for (int32 k = 0; k < Distance.Num(); k++)
-				{
-					UE_LOG(LogTemp, Warning, TEXT("Distance[%d] = %f"), k, Distance[k]);
-				}
-				int ii = 0;
-				for (FVector2D Element : UniqueSeeds)
-				{
-				
-					ii++;
-					UE_LOG(LogTemp, Warning, TEXT("UniqueSeeds[%d] = (%f, %f)"), ii, Element.X, Element.Y);
-				}
-				if(UniqueSeeds.Num() >= 3)
-				{
-					Vertices.Add(FVector2D(X, Y));
-				}*/
-				
-			
-			
+	
 		}
 	}
 
 
+}
+
+void UMyBlueprintFunctionLibrary::Add4VerticesOnWholeTextureCorner(UTexture2D* Texture2D)
+{
+	const int32 Width = Texture2D->GetSizeX();
+	const int32 Height = Texture2D->GetSizeY();
+	const FVector2D UpperLeft = FVector2D(1.5, Height-1.5);
+	const FVector2D DownLeft = FVector2D(1.5, 1.5);
+	const FVector2D UpperRight = FVector2D(Width-1.5, Height-1.5);
+	const FVector2D DownRight = FVector2D(Width-1.5, 1.5);
+	Vertices.Add(UpperLeft);
+	Vertices.Add(DownLeft);
+	Vertices.Add(UpperRight);
+	Vertices.Add(DownRight);
+	
 }
 
 void UMyBlueprintFunctionLibrary::DrawVerticesOnTexture2D(UTexture2D* Texture2D, FColor color)
@@ -407,6 +390,7 @@ void UMyBlueprintFunctionLibrary::DrawVerticesOnTexture2D(UTexture2D* Texture2D,
 
 	
 }
+
 
 void UMyBlueprintFunctionLibrary::AssignCellNumbers(UTexture2D* Texture2D)
 {
@@ -548,7 +532,7 @@ void UMyBlueprintFunctionLibrary::MergeSameCornerVertices()
 		for(int j = i+1; j < VerticesWithUniqueCellNumber.Num(); j++)
 		{
 			if(isVertexClustered[j]) continue; 
-			if(CurrentVertex.IsEquivalent(VerticesWithUniqueCellNumber[j]))
+			if(CurrentVertex.IsTwoEquivalent(VerticesWithUniqueCellNumber[j]))
 			{
 				ToCluster.Add(VerticesWithUniqueCellNumber[j]);
 				isVertexClustered[j] = true;	
@@ -607,7 +591,7 @@ void UMyBlueprintFunctionLibrary::Merge4CellCountVertices()
 		{
 			for(int32 j = 0; j<MergedCornerVerticesEdges.Num(); j++)
 			{
-				if(j!=i && CurrentVertex.IsEquivalent(MergedCornerVerticesEdges[j]))
+				if(j!=i && CurrentVertex.IsContainMoreThan3Element(MergedCornerVerticesEdges[j]))
 				{
 					isVertexClustered[j] = true;
 				}
@@ -625,6 +609,8 @@ void UMyBlueprintFunctionLibrary::Merge4CellCountVertices()
 	
 	UE_LOG(LogTemp, Warning, TEXT("Total vertices merged: %d"), Merged4CellCountVerticesEdges.Num());
 }
+
+
 
 
 void UMyBlueprintFunctionLibrary::DrawMergedVerticesOnTexture2D(UTexture2D* Texture2D, FColor color)
@@ -792,8 +778,8 @@ void UMyBlueprintFunctionLibrary::Test()
 	VertexC.CurrentCellsUniqueNumbers.Add(2);
 	VertexC.CurrentCellsUniqueNumbers.Add(3);
 
-	bool isEquivalentAB = VertexA.IsEquivalent(VertexB); // 应返回 false
-	bool isEquivalentAC = VertexC.IsEquivalent(VertexA); // 应返回 true
+	bool isEquivalentAB = VertexA.IsContainMoreThan3Element(VertexB); // 应返回 false
+	bool isEquivalentAC = VertexC.IsContainMoreThan3Element(VertexA); // 应返回 true
 	UE_LOG(LogTemp, Warning, TEXT("IsEquivalentAB (should be false): %s"), isEquivalentAB ? TEXT("true") : TEXT("false"));
 	UE_LOG(LogTemp, Warning, TEXT("IsEquivalentCA (should be true): %s"), isEquivalentAC ? TEXT("true") : TEXT("false"));
 

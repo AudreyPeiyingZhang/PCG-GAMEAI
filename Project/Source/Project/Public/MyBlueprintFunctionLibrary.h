@@ -19,7 +19,7 @@ public:
 	FVector2D VertexPosition;
 	TSet<int32> CurrentCellsUniqueNumbers;
 
-	bool IsEquivalent( const FVerticesEdgesStruct Other) const
+	bool IsContainMoreThan3Element( const FVerticesEdgesStruct Other) const
 	{
 
 		int Count = 0;
@@ -39,6 +39,24 @@ public:
 		}
 
 		return false;
+	}
+
+	bool IsTwoEquivalent(const FVerticesEdgesStruct& Other) const
+	{
+		if (CurrentCellsUniqueNumbers.Num() != Other.CurrentCellsUniqueNumbers.Num())
+		{
+			return false; 
+		}
+
+		for (const int32 Element : CurrentCellsUniqueNumbers)
+		{
+			if (!Other.CurrentCellsUniqueNumbers.Contains(Element))
+			{
+				return false;
+			}
+		}
+
+		return true;
 	}
 
 
@@ -105,6 +123,8 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Vertices Calculation")
 	static void CalculateVertices(UTexture2D* Texture2D);
 	UFUNCTION(BlueprintCallable, Category = "Vertices Calculation")
+	static void Add4VerticesOnWholeTextureCorner(UTexture2D* Texture2D);
+	UFUNCTION(BlueprintCallable, Category = "Vertices Calculation")
 	static void DrawVerticesOnTexture2D(UTexture2D* Texture2D,FColor color);
 	UFUNCTION(BlueprintCallable, Category = "Edges Calculation")
 	static void AssignCellNumbers(UTexture2D* Texture2D);
@@ -122,7 +142,7 @@ public:
 	static void GroupVerticesWithSharedCells();
 	UFUNCTION(BlueprintCallable, Category = "Edges Calculation")
 	static void PrintPairedVertices();
-	UFUNCTION(BlueprintCallable, Category = "Edges Calculation")
+	UFUNCTION(BlueprintCallable, Category = "Edges Calculation HUD")
 	static void DrawDebugEdges(UWorld* World);
 	static void Test();
 	
