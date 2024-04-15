@@ -92,6 +92,8 @@ TArray<FVerticesEdgesStruct> UMyBlueprintFunctionLibrary::MergedCornerVerticesEd
 TArray<FVerticesEdgesStruct> UMyBlueprintFunctionLibrary::Merged4CellCountVerticesEdges;
 TMap<FVector2D, int32> UMyBlueprintFunctionLibrary::CellUniqueNumbers;
 TArray<FPairedVertices> UMyBlueprintFunctionLibrary::PairedVertices;
+TMap<FVector, int32> UMyBlueprintFunctionLibrary::VertexIndexMap;
+TSet<FCellStruct> UMyBlueprintFunctionLibrary::Cells;
 
 
 void UMyBlueprintFunctionLibrary::InitializeClosestCellVoronoiSeedXY(UTexture2D* Texture2D)
@@ -174,72 +176,8 @@ void UMyBlueprintFunctionLibrary::DrawVoronoiSeedsOnTexture2D(UTexture2D* Textur
 	VoronoiSeeds.Empty();
 }
 
-/*FColor UMyBlueprintFunctionLibrary::VoronoiCalculation(FVector2D PixelLocation, float CellScale)
-{
-	
-	const FVector2D Value = FVector2D(PixelLocation.X/CellScale, PixelLocation.Y/CellScale);
-	const FVector2D BaseCell = FVector2D(FMath::Floor(Value.X), FMath::Floor(Value.Y));
-	float MinDist = FLT_MAX;
-	FVector2D ClosestCell = FVector2D();
-	for(int X = -1; X <=1; X++)
-	{
-		for(int Y = -1; Y <=1; Y++)
-		{
-			FVector2D CellXYIndex = BaseCell + FVector2D(X,Y);
-			//cellPos is seed
-			FVector2D CellPos = CellXYIndex + RandomVector2DtoVector2D(CellXYIndex);
-			const float CellDistWorldPosition = (CellPos - Value).Length();
-			if(CellDistWorldPosition < MinDist)
-			{
-				MinDist = CellDistWorldPosition;
-				ClosestCell = CellXYIndex;
-				
-			}
-			
-			
-		}
-	}
 
-	const float RandomColor = RandomVector2DtoVector1D(ClosestCell, FVector2D(289.89, 38.02), 4.98, 60.90);
-	const FVector vOffset = RandomVector1DtoVector3D(RandomColor);
-	const FColor PixelDrawCol = FColor(vOffset.X * 255, vOffset.Y * 255,vOffset.Z * 255, 255);
-	return PixelDrawCol;
-
-}
-
-
-
-
-void UMyBlueprintFunctionLibrary::DrawVoronoiOnTexture2D(UTexture2D* Texture2D, float CellSize)
-{
-
-	const int32 Width = Texture2D->GetSizeX();
-	const int32 Height = Texture2D->GetSizeY();
-	FByteBulkData* RawImageDataOut = &Texture2D->GetPlatformData()->Mips[0].BulkData;
-	FColor* FormatedImageDataOut = static_cast<FColor*>(RawImageDataOut->Lock(LOCK_READ_WRITE));
-	for(int X=0; X<Width; X++)
-	{
-		for (int Y =0; Y<Height; Y++)
-		{
-			const FColor PixelColor = VoronoiCalculation(FVector2D(X, Y), CellSize);
-			FormatedImageDataOut[(Y * Width) + X] = PixelColor;
-		}
-	}
-	RawImageDataOut->Unlock();
-	Texture2D->UpdateResource();
-}*/
-
-FColor UMyBlueprintFunctionLibrary::VoronoiCalculation(FVector2D PixelLocation, float CellCount)
-{
-	return FColor::Black;
-
-
-}
-
-
-
-
-void UMyBlueprintFunctionLibrary::DrawVoronoiOnTexture2D(UTexture2D* Texture2D, float CellCount)
+void UMyBlueprintFunctionLibrary::VoronoiCalculation(UTexture2D* Texture2D, float CellCount)
 {
 
 	const int32 Width = Texture2D->GetSizeX();
@@ -300,6 +238,18 @@ void UMyBlueprintFunctionLibrary::DrawVoronoiOnTexture2D(UTexture2D* Texture2D, 
 			
 		}
 	}
+
+	
+	for(int X1 =0; X1<Width; X1++)
+	{
+		for (int Y1 =0; Y1<Height; Y1++)
+		{
+			ClosestCellVoronoiSeedXY[X1][0] = FVector2D(Width/2,0);
+			ClosestCellVoronoiSeedXY[X1][Height - 1] = FVector2D(Width/2, Height-1);
+			ClosestCellVoronoiSeedXY[0][Y1] =  FVector2D(0,Height/2);
+			ClosestCellVoronoiSeedXY[Width - 1][Y1] = FVector2D(Width-1, Height/2);
+		}
+	}
 	RawImageDataOut->Unlock();
 	Texture2D->UpdateResource();
 }
@@ -353,10 +303,10 @@ void UMyBlueprintFunctionLibrary::Add4VerticesOnWholeTextureCorner(UTexture2D* T
 {
 	const int32 Width = Texture2D->GetSizeX();
 	const int32 Height = Texture2D->GetSizeY();
-	const FVector2D UpperLeft = FVector2D(1.5, Height-1.5);
-	const FVector2D DownLeft = FVector2D(1.5, 1.5);
-	const FVector2D UpperRight = FVector2D(Width-1.5, Height-1.5);
-	const FVector2D DownRight = FVector2D(Width-1.5, 1.5);
+	const FVector2D UpperLeft = FVector2D(1.0, Height-2.0);
+	const FVector2D DownLeft = FVector2D(1.0, 1.0);
+	const FVector2D UpperRight = FVector2D(Width-2.0, Height-2.0);
+	const FVector2D DownRight = FVector2D(Width-2.0, 1.0);
 	Vertices.Add(UpperLeft);
 	Vertices.Add(DownLeft);
 	Vertices.Add(UpperRight);
@@ -760,27 +710,139 @@ void UMyBlueprintFunctionLibrary::DrawDebugEdges(UWorld* World)
 	
 }
 
-void UMyBlueprintFunctionLibrary::Test()
+//after this, the functions below are aimed to create polygons
+void UMyBlueprintFunctionLibrary::CreateTessellatedPlaneMesh()
 {
-	FVerticesEdgesStruct VertexA;
-	VertexA.CurrentCellsUniqueNumbers.Add(1);
-	VertexA.CurrentCellsUniqueNumbers.Add(2);
-	VertexA.CurrentCellsUniqueNumbers.Add(3);
-	VertexA.CurrentCellsUniqueNumbers.Add(4);
+	for(int V = 0; V<Merged4CellCountVerticesEdges.Num(); V++)
+	{
 
-	FVerticesEdgesStruct VertexB;
-	VertexB.CurrentCellsUniqueNumbers.Add(3);
-	VertexB.CurrentCellsUniqueNumbers.Add(4);
-	VertexB.CurrentCellsUniqueNumbers.Add(5);
+		const FVerticesEdgesStruct CurrentVertex = Merged4CellCountVerticesEdges[V];
+		FVector VertexPos = FVector(CurrentVertex.VertexPosition.X, CurrentVertex.VertexPosition.Y, 0.0f);
+		if(!VertexIndexMap.Contains(VertexPos))
+		{
+			int32 NewIndex = VertexIndexMap.Num();
+			VertexIndexMap.Add(VertexPos, NewIndex);
+		}
+	}
+
+
 	
-	FVerticesEdgesStruct VertexC;
-	VertexC.CurrentCellsUniqueNumbers.Add(1);
-	VertexC.CurrentCellsUniqueNumbers.Add(2);
-	VertexC.CurrentCellsUniqueNumbers.Add(3);
+	for(int i = 0; i<Merged4CellCountVerticesEdges.Num(); i++)
+	{
+		FVerticesEdgesStruct CurrentVertex = Merged4CellCountVerticesEdges[i];
+		FCellStruct CurrentCell;
+		const int32 X = Merged4CellCountVerticesEdges[i].VertexPosition.X;
+		const int32 Y = Merged4CellCountVerticesEdges[i].VertexPosition.Y;
+		FVector VertexPos = FVector(X,Y,0.0f);
+		if(VertexIndexMap.Contains(VertexPos))
+		{
+			int32 Index = VertexIndexMap[VertexPos];
+			CurrentCell.VertexIndex.Add(Index);
+			CurrentCell.VertexPos.Add(VertexPos);
+		}
+		
+		TArray<FVerticesEdgesStruct> VertexInACell;
+		VertexInACell.Empty();
+		VertexInACell.Add(CurrentVertex);
+		
+		for(int j = i+1; j<Merged4CellCountVerticesEdges.Num();j++)
+		{
+			int SharedCellNumber = 0;
+			for(const int CellNumber : CurrentVertex.CurrentCellsUniqueNumbers)
+			{
+				if(Merged4CellCountVerticesEdges[j].CurrentCellsUniqueNumbers.Contains(CellNumber))
+				{
+					SharedCellNumber++;
+				}
 
-	bool isEquivalentAB = VertexA.IsContainMoreThan3Element(VertexB); // 应返回 false
-	bool isEquivalentAC = VertexC.IsContainMoreThan3Element(VertexA); // 应返回 true
-	UE_LOG(LogTemp, Warning, TEXT("IsEquivalentAB (should be false): %s"), isEquivalentAB ? TEXT("true") : TEXT("false"));
-	UE_LOG(LogTemp, Warning, TEXT("IsEquivalentCA (should be true): %s"), isEquivalentAC ? TEXT("true") : TEXT("false"));
+				if(SharedCellNumber==1)
+				{
+					//CurrentCell.CellIndex = CellNumber;
+					VertexInACell.Add(Merged4CellCountVerticesEdges[j]);
+					
+					const int32 Xj = Merged4CellCountVerticesEdges[j].VertexPosition.X;
+					const int32 Yj = Merged4CellCountVerticesEdges[j].VertexPosition.Y;
+					FVector jVertexPos = FVector(Xj,Yj,0.0f);
+					
+					if(VertexIndexMap.Contains(jVertexPos))
+					{
+						int32 Index = VertexIndexMap[jVertexPos];
+						CurrentCell.VertexIndex.Add(Index);
+						CurrentCell.VertexPos.Add(jVertexPos);
+					}
+					
+				}
+				
+			}
 
+			
+			
+		}
+
+		
+		CurrentCell.Centroid = FVector(0,0,0);
+		
+		TSet<int32> CommonElements;
+		for (int32 Element : VertexInACell[0].CurrentCellsUniqueNumbers)
+		{
+			CommonElements.Add(Element);
+		}
+
+		
+		for (int32 e = 1; e < VertexInACell.Num(); e++)
+		{
+			TSet<int32> CurrentSet;
+			
+			for (int32 Element : VertexInACell[e].CurrentCellsUniqueNumbers)
+			{
+				CurrentSet.Add(Element);
+			}
+
+			
+			CommonElements = CommonElements.Intersect(CurrentSet);
+		}
+
+		if (CommonElements.Num() == 1)
+		{
+			
+			int32 Element = *CommonElements.CreateConstIterator();
+			CurrentCell.CellIndex = Element;
+		}
+
+		Cells.Add(CurrentCell);
+
+	}
+	
+}
+
+FString ToString(const FCellStruct& Cell)
+{
+	FString VertexIndices;
+	for (int Index : Cell.VertexIndex)
+	{
+		VertexIndices += FString::Printf(TEXT("%d "), Index);
+	}
+	VertexIndices = VertexIndices.TrimEnd();
+
+	FString VertexPositions;
+	for (const FVector& Pos : Cell.VertexPos)
+	{
+		VertexPositions += FString::Printf(TEXT("(%s) "), *Pos.ToString());
+	}
+	VertexPositions = VertexPositions.TrimEnd();
+
+	return FString::Printf(TEXT("CellIndex: %d, VertexIndices: [%s], VertexPositions: [%s], Centroid: %s"),
+		Cell.CellIndex, *VertexIndices, *VertexPositions, *Cell.Centroid.ToString());
+}
+
+
+void UMyBlueprintFunctionLibrary::PrintCells()
+{
+
+	UE_LOG(LogTemp, Log, TEXT("Printing Cells:"));
+	for (const FCellStruct& Cell : Cells)
+	{
+		FString CellInfo = ToString(Cell);
+		UE_LOG(LogTemp, Log, TEXT("%s"), *CellInfo);
+	}
 }

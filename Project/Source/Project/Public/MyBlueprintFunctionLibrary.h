@@ -3,6 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "ProceduralMeshComponent.h"
 #include "MyBlueprintFunctionLibrary.generated.h"
 
 /**
@@ -91,6 +92,53 @@ public:
 };
 
 
+USTRUCT(BlueprintType)
+struct FCellStruct
+{
+	GENERATED_BODY()
+public:
+	int32 CellIndex =0;
+	TArray<int32> VertexIndex;
+	TArray<FVector> VertexPos;
+	FVector Centroid;
+	
+
+	void CalculateCentroid()
+	{
+		if (VertexIndex.Num() == 0)
+			return;
+
+		FVector Sum(0.f, 0.f, 0.f);
+		for (const FVector& vertexPos : VertexPos)
+		{
+			Sum += vertexPos;
+		}
+		Centroid = Sum / VertexIndex.Num();
+	}
+
+	bool operator==(const FCellStruct& Other) const
+	{
+		return CellIndex == Other.CellIndex &&
+			   VertexIndex == Other.VertexIndex &&
+			   Centroid == Other.Centroid;
+	}
+
+	// 自定义哈希函数
+	friend uint32 GetTypeHash(const FCellStruct& Cell)
+	{
+		uint32 HashCode = GetTypeHash(Cell.CellIndex);
+		HashCode = HashCombine(HashCode, GetTypeHash(Cell.Centroid));
+		for (int32 Index : Cell.VertexIndex)
+		{
+			HashCode = HashCombine(HashCode, GetTypeHash(Index));
+		}
+		return HashCode;
+	}
+
+	
+	
+};
+
 
 
 UCLASS()
@@ -117,9 +165,7 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Voronoi Calculation")
 	static void DrawVoronoiSeedsOnTexture2D(UTexture2D* Texture2D, FColor color);
 	UFUNCTION(BlueprintCallable, Category = "Voronoi Calculation")
-	static FColor VoronoiCalculation(FVector2D PixelLocation, float CellCount);
-	UFUNCTION(BlueprintCallable, Category = "Voronoi Calculation")
-	static void DrawVoronoiOnTexture2D (UTexture2D* Texture2D, float CellCount);
+	static void VoronoiCalculation (UTexture2D* Texture2D, float CellCount);
 	UFUNCTION(BlueprintCallable, Category = "Vertices Calculation")
 	static void CalculateVertices(UTexture2D* Texture2D);
 	UFUNCTION(BlueprintCallable, Category = "Vertices Calculation")
@@ -144,7 +190,12 @@ public:
 	static void PrintPairedVertices();
 	UFUNCTION(BlueprintCallable, Category = "Edges Calculation HUD")
 	static void DrawDebugEdges(UWorld* World);
-	static void Test();
+	UFUNCTION(BlueprintCallable, Category = "Polygons Calculation")
+	static void CreateTessellatedPlaneMesh();
+	UFUNCTION(BlueprintCallable, Category = "Polygons Calculation")
+	static void PrintCells();
+	
+
 	
 
 	
@@ -163,6 +214,8 @@ public:
 	static TArray<FVerticesEdgesStruct> Merged4CellCountVerticesEdges;
 	static TMap<FVector2D, int32> CellUniqueNumbers;
 	static TArray<FPairedVertices> PairedVertices;
+	static TMap<FVector, int32> VertexIndexMap;
+	static TSet<FCellStruct> Cells;
 		
 
 	//function to make texture 2d

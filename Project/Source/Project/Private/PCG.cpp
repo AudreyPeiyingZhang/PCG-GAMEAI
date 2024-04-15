@@ -3,6 +3,8 @@
 
 #include "PCG.h"
 
+#include "MyBlueprintFunctionLibrary.h"
+
 // Sets default values
 APCG::APCG()
 {
@@ -19,6 +21,7 @@ void APCG::BeginPlay()
 {
 	Super::BeginPlay();
 	CreateMesh();
+	
 	
 }
 

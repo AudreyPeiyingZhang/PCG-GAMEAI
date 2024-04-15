@@ -42,15 +42,7 @@ void ATexture2DGeneration::BeginPlay()
 	UMyBlueprintFunctionLibrary::InitializeClosestCellVoronoiSeedXY(pTexture);
 	//draw any (x,y) on texture2d pixel
 	//UMyBlueprintFunctionLibrary::SetTexture2DPixels(Texture2D, 20, 20, FColor::Red);
-	//create random FVector2D by FVector2D seed, return FVector2D on the range FVector2D.X[0,1], FVector2D.Y[0,1]
-	//const FVector2D Seed = FVector2D(13.56, 87.31);
-	//UMyBlueprintFunctionLibrary::RandomVector2DtoVector2D(Seed);
-
-	//drawVoronoi
-	
-	
-	//UMyBlueprintFunctionLibrary::VoronoiSeedsCalculation(pTexture,CellCount  );
-	UMyBlueprintFunctionLibrary::DrawVoronoiOnTexture2D(pTexture,CellCount);
+	UMyBlueprintFunctionLibrary::VoronoiCalculation(pTexture,CellCount);
 	UMyBlueprintFunctionLibrary::DrawVoronoiSeedsOnTexture2D(pTexture, FColor::Black);
 	UMyBlueprintFunctionLibrary::CalculateVertices(pTexture);
 	UMyBlueprintFunctionLibrary::Add4VerticesOnWholeTextureCorner(pTexture);
@@ -60,11 +52,12 @@ void ATexture2DGeneration::BeginPlay()
 	UMyBlueprintFunctionLibrary::Merge4CellCountVertices();
 	UMyBlueprintFunctionLibrary::DrawMergedVerticesOnTexture2D(pTexture, FColor::Green);
 	UMyBlueprintFunctionLibrary::PrintVertexPosAndUniqueCellNumber();
-	
 	UMyBlueprintFunctionLibrary::GroupVerticesWithSharedCells();
 	UMyBlueprintFunctionLibrary::PrintPairedVertices();
 	UMyBlueprintFunctionLibrary::DrawDebugEdges(GetWorld());
-	UMyBlueprintFunctionLibrary::Test();
+	UMyBlueprintFunctionLibrary::CreateTessellatedPlaneMesh();
+	UMyBlueprintFunctionLibrary::PrintCells();
+	
 	
 }
 
