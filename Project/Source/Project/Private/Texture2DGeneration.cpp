@@ -52,11 +52,14 @@ void ATexture2DGeneration::BeginPlay()
 	UMyBlueprintFunctionLibrary::Merge4CellCountVertices();
 	UMyBlueprintFunctionLibrary::DrawMergedVerticesOnTexture2D(pTexture, FColor::Green);
 	UMyBlueprintFunctionLibrary::PrintVertexPosAndUniqueCellNumber();
-	UMyBlueprintFunctionLibrary::GroupVerticesWithSharedCells();
+	UMyBlueprintFunctionLibrary::GroupVerticesWithSharedCells(pTexture);
 	UMyBlueprintFunctionLibrary::PrintPairedVertices();
 	UMyBlueprintFunctionLibrary::DrawDebugEdges(GetWorld());
-	UMyBlueprintFunctionLibrary::CreateTessellatedPlaneMesh();
-	UMyBlueprintFunctionLibrary::PrintCells();
+	//functions below is to create polygons
+	UMyBlueprintFunctionLibrary::ProcessVerticesForPolyCalculation(pTexture);
+	UMyBlueprintFunctionLibrary::AssignVertexUniqueIndex();
+	UMyBlueprintFunctionLibrary::DistinguishEachCell(pTexture);
+	//UMyBlueprintFunctionLibrary::PrintCells();
 	
 	
 }

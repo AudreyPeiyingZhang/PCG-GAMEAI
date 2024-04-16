@@ -92,8 +92,12 @@ TArray<FVerticesEdgesStruct> UMyBlueprintFunctionLibrary::MergedCornerVerticesEd
 TArray<FVerticesEdgesStruct> UMyBlueprintFunctionLibrary::Merged4CellCountVerticesEdges;
 TMap<FVector2D, int32> UMyBlueprintFunctionLibrary::CellUniqueNumbers;
 TArray<FPairedVertices> UMyBlueprintFunctionLibrary::PairedVertices;
+//below for poly calculation
+TArray<FVerticesEdgesStruct> UMyBlueprintFunctionLibrary::ProcessedVertices;
 TMap<FVector, int32> UMyBlueprintFunctionLibrary::VertexIndexMap;
 TSet<FCellStruct> UMyBlueprintFunctionLibrary::Cells;
+TArray<FVector> UMyBlueprintFunctionLibrary::SameCellVertices;
+TMap<int32, TArray<FVector>> UMyBlueprintFunctionLibrary::CellWithVerticesArrays;
 
 
 void UMyBlueprintFunctionLibrary::InitializeClosestCellVoronoiSeedXY(UTexture2D* Texture2D)
@@ -348,6 +352,7 @@ void UMyBlueprintFunctionLibrary::AssignCellNumbers(UTexture2D* Texture2D)
 	const int32 Height = Texture2D->GetSizeY();
 
 	int32 CellNumber = 0;
+	int32 SpecialCellNumber = 10000;
 
 
 	for (int v = 0; v < Vertices.Num(); v++)
@@ -369,11 +374,30 @@ void UMyBlueprintFunctionLibrary::AssignCellNumbers(UTexture2D* Texture2D)
 				
 
 				FVector2D NeighborSeed = ClosestCellVoronoiSeedXY[X + i][Y + j];
-				if (!CellUniqueNumbers.Contains(NeighborSeed))
+				if(
+					NeighborSeed == FVector2D(Width/2,0) ||
+					NeighborSeed == FVector2D(Width/2, Height-1)||
+					NeighborSeed == FVector2D(0,Height/2)||
+					NeighborSeed == FVector2D(Width-1, Height/2))
 				{
-					CellUniqueNumbers.Add(NeighborSeed, CellNumber++);
+					{
+						
+						if (!CellUniqueNumbers.Contains(NeighborSeed))
+						{
+							CellUniqueNumbers.Add(NeighborSeed, SpecialCellNumber++);
+						}
+						CurrentVerticesEdgesStruct.CurrentCellsUniqueNumbers.Add(CellUniqueNumbers[NeighborSeed]);
+					}
 				}
-				CurrentVerticesEdgesStruct.CurrentCellsUniqueNumbers.Add(CellUniqueNumbers[NeighborSeed]);
+				
+				else
+				{
+					if (!CellUniqueNumbers.Contains(NeighborSeed))
+					{
+						CellUniqueNumbers.Add(NeighborSeed, CellNumber++);
+					}
+					CurrentVerticesEdgesStruct.CurrentCellsUniqueNumbers.Add(CellUniqueNumbers[NeighborSeed]);
+				}
 				
 			}
 		}
@@ -639,11 +663,16 @@ void UMyBlueprintFunctionLibrary::DrawVertexPositionsAndCellNumbersOnHUD(AHUD* H
 }
 
 
-void UMyBlueprintFunctionLibrary::GroupVerticesWithSharedCells()
+void UMyBlueprintFunctionLibrary::GroupVerticesWithSharedCells(UTexture2D* Texture2D)
 {
+	const int32 Width = Texture2D->GetSizeX();
+	const int32 Height = Texture2D->GetSizeY();
+	
 	for(int i = 0; i<Merged4CellCountVerticesEdges.Num();i++)
 	{
 		FVerticesEdgesStruct CurrentVertex = Merged4CellCountVerticesEdges[i];
+		int32 X = CurrentVertex.VertexPosition.X;
+		int32 Y = CurrentVertex.VertexPosition.Y;
 		
 		for(int j = i+1; j<Merged4CellCountVerticesEdges.Num();j++)
 		{
@@ -655,7 +684,10 @@ void UMyBlueprintFunctionLibrary::GroupVerticesWithSharedCells()
 					SharedCellNumber++;
 				}
 			}
+
 			
+			
+		
 			if(SharedCellNumber==2)
 			{
 				FPairedVertices CurrentPairedVertices (CurrentVertex.VertexPosition, Merged4CellCountVerticesEdges[j].VertexPosition);
@@ -669,13 +701,15 @@ void UMyBlueprintFunctionLibrary::GroupVerticesWithSharedCells()
 					}
 				}
 
-				
+			
 				if(bIsNewPairUnique)
 				{
 					PairedVertices.Add(CurrentPairedVertices);
 				}
-				
+			
 			}
+			
+			
 		}
 
 		
@@ -711,12 +745,55 @@ void UMyBlueprintFunctionLibrary::DrawDebugEdges(UWorld* World)
 }
 
 //after this, the functions below are aimed to create polygons
-void UMyBlueprintFunctionLibrary::CreateTessellatedPlaneMesh()
+
+void UMyBlueprintFunctionLibrary::ProcessVerticesForPolyCalculation(UTexture2D* Texture2D)
 {
-	for(int V = 0; V<Merged4CellCountVerticesEdges.Num(); V++)
+	const int32 Width = Texture2D->GetSizeX();
+	const int32 Height = Texture2D->GetSizeY();
+	
+
+	for (int i =0; i<Merged4CellCountVerticesEdges.Num();i++)
 	{
 
-		const FVerticesEdgesStruct CurrentVertex = Merged4CellCountVerticesEdges[V];
+		FVerticesEdgesStruct CurrentVertex  = Merged4CellCountVerticesEdges[i];
+
+		
+		if ( CurrentVertex.IsEdge(Width,Height))
+		{
+			if(CurrentVertex.CurrentCellsUniqueNumbers.Contains(10000))
+			{
+				CurrentVertex.CurrentCellsUniqueNumbers.Remove(10000);
+			}
+
+			if(CurrentVertex.CurrentCellsUniqueNumbers.Contains(10001))
+			{
+				CurrentVertex.CurrentCellsUniqueNumbers.Remove(10001);
+			}
+
+			if(CurrentVertex.CurrentCellsUniqueNumbers.Contains(10002))
+			{
+				CurrentVertex.CurrentCellsUniqueNumbers.Remove(10002);
+			}
+
+			if(CurrentVertex.CurrentCellsUniqueNumbers.Contains(10003))
+			{
+				CurrentVertex.CurrentCellsUniqueNumbers.Remove(10003);
+			}
+		}
+
+		ProcessedVertices.Add(CurrentVertex);
+		
+	}
+
+	
+}
+
+void UMyBlueprintFunctionLibrary::AssignVertexUniqueIndex()
+{
+	for(int V = 0; V<ProcessedVertices.Num(); V++)
+	{
+
+		const FVerticesEdgesStruct CurrentVertex = ProcessedVertices[V];
 		FVector VertexPos = FVector(CurrentVertex.VertexPosition.X, CurrentVertex.VertexPosition.Y, 0.0f);
 		if(!VertexIndexMap.Contains(VertexPos))
 		{
@@ -724,63 +801,46 @@ void UMyBlueprintFunctionLibrary::CreateTessellatedPlaneMesh()
 			VertexIndexMap.Add(VertexPos, NewIndex);
 		}
 	}
-
-
 	
-	for(int i = 0; i<Merged4CellCountVerticesEdges.Num(); i++)
+}
+
+void UMyBlueprintFunctionLibrary::DistinguishEachCell(UTexture2D* Texture2D)
+{
+	
+
+	CellWithVerticesArrays.Empty();  // 清空之前的数据
+	const int32 Width = Texture2D->GetSizeX();
+	const int32 Height = Texture2D->GetSizeY();
+
+	// 遍历所有顶点
+	for (int i = 0; i < ProcessedVertices.Num(); i++)
 	{
-		FVerticesEdgesStruct CurrentVertex = Merged4CellCountVerticesEdges[i];
-		FCellStruct CurrentCell;
-		const int32 X = Merged4CellCountVerticesEdges[i].VertexPosition.X;
-		const int32 Y = Merged4CellCountVerticesEdges[i].VertexPosition.Y;
-		FVector VertexPos = FVector(X,Y,0.0f);
-		if(VertexIndexMap.Contains(VertexPos))
-		{
-			int32 Index = VertexIndexMap[VertexPos];
-			CurrentCell.VertexIndex.Add(Index);
-			CurrentCell.VertexPos.Add(VertexPos);
+		const FVerticesEdgesStruct& CurrentVertex = ProcessedVertices[i];
+		const FVector VertexPos(CurrentVertex.VertexPosition.X, CurrentVertex.VertexPosition.Y, 0.0f);
+
+		// 遍历当前顶点的所有单元编号
+		for (int CellNumber : CurrentVertex.CurrentCellsUniqueNumbers)
+		{	
+			// 将顶点添加到每个单元编号对应的数组中
+			TArray<FVector>& VertexArray = CellWithVerticesArrays.FindOrAdd(CellNumber);
+			VertexArray.AddUnique(VertexPos);  // 使用 AddUnique 确保不重复添加相同的顶点
 		}
-		
-		TArray<FVerticesEdgesStruct> VertexInACell;
-		VertexInACell.Empty();
-		VertexInACell.Add(CurrentVertex);
-		
-		for(int j = i+1; j<Merged4CellCountVerticesEdges.Num();j++)
+	}
+
+	// 可选：打印结果或进行其他操作
+	for (const auto& Pair : CellWithVerticesArrays)
+	{
+		const int32& CellNumber = Pair.Key;
+		const TArray<FVector>& VertexArray = Pair.Value;
+		FString VertexList;
+		for (const FVector& Vertex : VertexArray)
 		{
-			int SharedCellNumber = 0;
-			for(const int CellNumber : CurrentVertex.CurrentCellsUniqueNumbers)
-			{
-				if(Merged4CellCountVerticesEdges[j].CurrentCellsUniqueNumbers.Contains(CellNumber))
-				{
-					SharedCellNumber++;
-				}
-
-				if(SharedCellNumber==1)
-				{
-					//CurrentCell.CellIndex = CellNumber;
-					VertexInACell.Add(Merged4CellCountVerticesEdges[j]);
-					
-					const int32 Xj = Merged4CellCountVerticesEdges[j].VertexPosition.X;
-					const int32 Yj = Merged4CellCountVerticesEdges[j].VertexPosition.Y;
-					FVector jVertexPos = FVector(Xj,Yj,0.0f);
-					
-					if(VertexIndexMap.Contains(jVertexPos))
-					{
-						int32 Index = VertexIndexMap[jVertexPos];
-						CurrentCell.VertexIndex.Add(Index);
-						CurrentCell.VertexPos.Add(jVertexPos);
-					}
-					
-				}
-				
-			}
-
-			
-			
+			VertexList += Vertex.ToString() + TEXT(" ");
 		}
-
+		UE_LOG(LogTemp, Log, TEXT("Cell %d: %s"), CellNumber, *VertexList);
+	}
 		
-		CurrentCell.Centroid = FVector(0,0,0);
+		/*CurrentCell.Centroid = FVector(0,0,0);
 		
 		TSet<int32> CommonElements;
 		for (int32 Element : VertexInACell[0].CurrentCellsUniqueNumbers)
@@ -809,10 +869,15 @@ void UMyBlueprintFunctionLibrary::CreateTessellatedPlaneMesh()
 			CurrentCell.CellIndex = Element;
 		}
 
-		Cells.Add(CurrentCell);
+		Cells.Add(CurrentCell);*/
 
-	}
 	
+	
+}
+
+
+void UMyBlueprintFunctionLibrary::GroupEdges()
+{
 }
 
 FString ToString(const FCellStruct& Cell)

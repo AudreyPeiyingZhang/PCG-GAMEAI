@@ -34,6 +34,8 @@ public:
 			}
 		}
 
+		
+
 		if(Count>=3)
 		{
 			return true;
@@ -60,6 +62,17 @@ public:
 		return true;
 	}
 
+	bool IsEdge(int32 Width, int32 Height) const
+	{
+		if(VertexPosition.X == 1 || VertexPosition.X == Width - 2 || VertexPosition.Y == 1 ||VertexPosition.Y == Height - 2)
+		{
+			return true;
+		}
+
+		return false;
+	}
+
+	
 
 	
 };
@@ -123,7 +136,7 @@ public:
 			   Centroid == Other.Centroid;
 	}
 
-	// 自定义哈希函数
+	
 	friend uint32 GetTypeHash(const FCellStruct& Cell)
 	{
 		uint32 HashCode = GetTypeHash(Cell.CellIndex);
@@ -185,13 +198,20 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Edges Calculation")
 	static void PrintVertexPosAndUniqueCellNumber();
 	UFUNCTION(BlueprintCallable, Category = "Edges Calculation")
-	static void GroupVerticesWithSharedCells();
+	static void GroupVerticesWithSharedCells(UTexture2D* Texture2D);
 	UFUNCTION(BlueprintCallable, Category = "Edges Calculation")
 	static void PrintPairedVertices();
 	UFUNCTION(BlueprintCallable, Category = "Edges Calculation HUD")
 	static void DrawDebugEdges(UWorld* World);
+	//functions below is used for polygon calculation
 	UFUNCTION(BlueprintCallable, Category = "Polygons Calculation")
-	static void CreateTessellatedPlaneMesh();
+	static void ProcessVerticesForPolyCalculation(UTexture2D* Texture2D);
+	UFUNCTION(BlueprintCallable, Category = "Polygons Calculation")
+	static void AssignVertexUniqueIndex();
+	UFUNCTION(BlueprintCallable, Category = "Polygons Calculation")
+	static void DistinguishEachCell(UTexture2D* Texture2D);
+	UFUNCTION(BlueprintCallable, Category = "Polygons Calculation")
+	static void GroupEdges();
 	UFUNCTION(BlueprintCallable, Category = "Polygons Calculation")
 	static void PrintCells();
 	
@@ -214,8 +234,13 @@ public:
 	static TArray<FVerticesEdgesStruct> Merged4CellCountVerticesEdges;
 	static TMap<FVector2D, int32> CellUniqueNumbers;
 	static TArray<FPairedVertices> PairedVertices;
+	//below is for poly calculation
+	static TArray<FVerticesEdgesStruct> ProcessedVertices;
 	static TMap<FVector, int32> VertexIndexMap;
 	static TSet<FCellStruct> Cells;
+	static TArray<FVector> SameCellVertices;
+	static TMap<int32, TArray<FVector>> CellWithVerticesArrays;
+	//static TArray<TArray<FPairedVertices>> CellWithEdgesArrays;
 		
 
 	//function to make texture 2d
