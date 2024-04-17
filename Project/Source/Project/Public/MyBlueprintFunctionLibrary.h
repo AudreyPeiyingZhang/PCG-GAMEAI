@@ -62,7 +62,7 @@ public:
 		return true;
 	}
 
-	bool IsEdge(int32 Width, int32 Height) const
+	bool IsWholeTextureEdge(int32 Width, int32 Height) const
 	{
 		if(VertexPosition.X == 1 || VertexPosition.X == Width - 2 || VertexPosition.Y == 1 ||VertexPosition.Y == Height - 2)
 		{
@@ -106,47 +106,68 @@ public:
 
 
 USTRUCT(BlueprintType)
+struct FPairedVerticesWith3DInfo
+{
+	GENERATED_BODY()
+public:
+
+	FVector FirstVertexPosition;
+	FVector SecondVertexPosition;
+
+	FPairedVerticesWith3DInfo() {}
+	
+	FPairedVerticesWith3DInfo(FVector InFirstVertex, FVector InSecondVertex)
+	: FirstVertexPosition(InFirstVertex), SecondVertexPosition(InSecondVertex) {}
+
+	
+	
+	
+};
+
+
+
+USTRUCT(BlueprintType)
+struct FVertexIndexPairStruct
+{
+	
+	GENERATED_BODY()
+public:
+	
+	int32 FirstVertexIndex;
+	int32 SecondVertexIndex;
+};
+
+USTRUCT(BlueprintType)
 struct FCellStruct
 {
 	GENERATED_BODY()
 public:
-	int32 CellIndex =0;
-	TArray<int32> VertexIndex;
-	TArray<FVector> VertexPos;
-	FVector Centroid;
+	int32 CellIndex;
+	//
 	
 
-	void CalculateCentroid()
+	TArray<FVertexIndexPairStruct> VertexIndexPairs;
+
+	//
+	
+	TArray<FPairedVerticesWith3DInfo> VertexPositionPairs;
+	//
+	FVector CentroidPosition;
+	int32 CentroidIndex;
+	
+
+	FVector CalculateCentroid()
 	{
-		if (VertexIndex.Num() == 0)
-			return;
 
 		FVector Sum(0.f, 0.f, 0.f);
-		for (const FVector& vertexPos : VertexPos)
+		for (const FPairedVerticesWith3DInfo& VertexPair : VertexPositionPairs)
 		{
-			Sum += vertexPos;
+			Sum += VertexPair.FirstVertexPosition + VertexPair.SecondVertexPosition;
 		}
-		Centroid = Sum / VertexIndex.Num();
+		return CentroidPosition = Sum / (VertexPositionPairs.Num() * 2);  // 乘以 2 因为每个对有两个顶点
 	}
 
-	bool operator==(const FCellStruct& Other) const
-	{
-		return CellIndex == Other.CellIndex &&
-			   VertexIndex == Other.VertexIndex &&
-			   Centroid == Other.Centroid;
-	}
 
-	
-	friend uint32 GetTypeHash(const FCellStruct& Cell)
-	{
-		uint32 HashCode = GetTypeHash(Cell.CellIndex);
-		HashCode = HashCombine(HashCode, GetTypeHash(Cell.Centroid));
-		for (int32 Index : Cell.VertexIndex)
-		{
-			HashCode = HashCombine(HashCode, GetTypeHash(Index));
-		}
-		return HashCode;
-	}
 
 	
 	
@@ -211,9 +232,15 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Polygons Calculation")
 	static void DistinguishEachCell(UTexture2D* Texture2D);
 	UFUNCTION(BlueprintCallable, Category = "Polygons Calculation")
-	static void GroupEdges();
+	static void GroupEdgesInCells();
 	UFUNCTION(BlueprintCallable, Category = "Polygons Calculation")
-	static void PrintCells();
+	static void AssignEachCellStruct();
+	UFUNCTION(BlueprintCallable, Category = "Polygons Calculation")
+	static void PrintCellsArray();
+	//triangles
+	UFUNCTION(BlueprintCallable, Category = "Polygons Calculation")
+	static void MakeTriangle(UProceduralMeshComponent* Mesh, TArray<FVector> VtxPos, TArray<int32> VtxIndex);
+
 	
 
 	
@@ -237,11 +264,13 @@ public:
 	//below is for poly calculation
 	static TArray<FVerticesEdgesStruct> ProcessedVertices;
 	static TMap<FVector, int32> VertexIndexMap;
-	static TSet<FCellStruct> Cells;
 	static TArray<FVector> SameCellVertices;
 	static TMap<int32, TArray<FVector>> CellWithVerticesArrays;
-	//static TArray<TArray<FPairedVertices>> CellWithEdgesArrays;
-		
+	static TMap<int32, TArray<FPairedVerticesWith3DInfo>>  CellWithEdgesArrays;
+	static TArray<FCellStruct> Cells;
+	//Make Triangles
+	static TArray<FVector> VertexPos;
+	static TArray<int32> VertexIndex;
 
 	//function to make texture 2d
 

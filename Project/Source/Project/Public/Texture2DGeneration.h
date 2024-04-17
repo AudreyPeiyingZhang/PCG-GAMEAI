@@ -6,6 +6,8 @@
 #include "GameFramework/Actor.h"
 #include "Texture2DGeneration.generated.h"
 
+class UProceduralMeshComponent;
+
 UCLASS()
 class PROJECT_API ATexture2DGeneration : public AActor
 {
@@ -30,6 +32,8 @@ protected:
 	UMaterialInstanceDynamic* MaterialInstance;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Material")
 	UMaterialInterface* MaterialInterface;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Polygons")
+	UProceduralMeshComponent* ProceduralMesh;
 
 
 

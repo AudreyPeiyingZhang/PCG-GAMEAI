@@ -59,7 +59,9 @@ void ATexture2DGeneration::BeginPlay()
 	UMyBlueprintFunctionLibrary::ProcessVerticesForPolyCalculation(pTexture);
 	UMyBlueprintFunctionLibrary::AssignVertexUniqueIndex();
 	UMyBlueprintFunctionLibrary::DistinguishEachCell(pTexture);
-	//UMyBlueprintFunctionLibrary::PrintCells();
+	UMyBlueprintFunctionLibrary::GroupEdgesInCells();
+	UMyBlueprintFunctionLibrary::AssignEachCellStruct();
+	UMyBlueprintFunctionLibrary::PrintCellsArray();
 	
 	
 }
