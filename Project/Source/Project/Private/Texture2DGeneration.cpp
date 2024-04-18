@@ -14,6 +14,10 @@ ATexture2DGeneration::ATexture2DGeneration()
 	PrimaryActorTick.bCanEverTick = true;
 	Plane = CreateDefaultSubobject<UStaticMeshComponent>("Plane");
 	MaterialInterface = CreateDefaultSubobject<UMaterialInterface>("MaterialInterface");
+	//poly
+	ProceduralMesh = CreateDefaultSubobject<UProceduralMeshComponent>("ProceduralMeshComponent");
+
+	
 	
 	
 	
@@ -61,7 +65,9 @@ void ATexture2DGeneration::BeginPlay()
 	UMyBlueprintFunctionLibrary::DistinguishEachCell(pTexture);
 	UMyBlueprintFunctionLibrary::GroupEdgesInCells();
 	UMyBlueprintFunctionLibrary::AssignEachCellStruct();
+	UMyBlueprintFunctionLibrary::SortVerticesInCells();
 	UMyBlueprintFunctionLibrary::PrintCellsArray();
+	UMyBlueprintFunctionLibrary::CreateVoronoiShapePolygon(ProceduralMesh);
 	
 	
 }

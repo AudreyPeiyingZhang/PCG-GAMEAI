@@ -147,24 +147,30 @@ public:
 	
 
 	TArray<FVertexIndexPairStruct> VertexIndexPairs;
+	TArray<FVector> VerticesPosition;
 
 	//
 	
 	TArray<FPairedVerticesWith3DInfo> VertexPositionPairs;
 	//
-	FVector CentroidPosition;
+
 	int32 CentroidIndex;
 	
 
 	FVector CalculateCentroid()
 	{
+		if (VerticesPosition.Num() == 0)
+			return FVector(0,0,0);
 
-		FVector Sum(0.f, 0.f, 0.f);
-		for (const FPairedVerticesWith3DInfo& VertexPair : VertexPositionPairs)
+		FVector Sum(0.0f, 0.0f, 0.0f);
+		for (const FVector& vertexPos : VerticesPosition)
 		{
-			Sum += VertexPair.FirstVertexPosition + VertexPair.SecondVertexPosition;
+			Sum += vertexPos;
 		}
-		return CentroidPosition = Sum / (VertexPositionPairs.Num() * 2);  // 乘以 2 因为每个对有两个顶点
+		FVector Centroid = Sum / VerticesPosition.Num();
+
+		
+		return Centroid;
 	}
 
 
@@ -239,7 +245,9 @@ public:
 	static void PrintCellsArray();
 	//triangles
 	UFUNCTION(BlueprintCallable, Category = "Polygons Calculation")
-	static void MakeTriangle(UProceduralMeshComponent* Mesh, TArray<FVector> VtxPos, TArray<int32> VtxIndex);
+	static void SortVerticesInCells();
+	UFUNCTION(BlueprintCallable, Category = "Polygons Calculation")
+	static void CreateVoronoiShapePolygon(UProceduralMeshComponent* ProceduralMesh);
 
 	
 
@@ -269,8 +277,9 @@ public:
 	static TMap<int32, TArray<FPairedVerticesWith3DInfo>>  CellWithEdgesArrays;
 	static TArray<FCellStruct> Cells;
 	//Make Triangles
-	static TArray<FVector> VertexPos;
-	static TArray<int32> VertexIndex;
+	static TArray<FVector> WholeVerticesInTexture;
+	static TArray<int32> TrianglesIndex;
+	static TMap<FVector, int32> GlobalVertexIndexMap; 
 
 	//function to make texture 2d
 

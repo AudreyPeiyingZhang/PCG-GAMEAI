@@ -99,8 +99,9 @@ TArray<FVector> UMyBlueprintFunctionLibrary::SameCellVertices;
 TMap<int32, TArray<FVector>> UMyBlueprintFunctionLibrary::CellWithVerticesArrays;
 TMap<int32, TArray<FPairedVerticesWith3DInfo>> UMyBlueprintFunctionLibrary::CellWithEdgesArrays;
 TArray<FCellStruct> UMyBlueprintFunctionLibrary::Cells;
-TArray<FVector> UMyBlueprintFunctionLibrary::VertexPos;
-TArray<int32> UMyBlueprintFunctionLibrary::VertexIndex;
+TArray<FVector> UMyBlueprintFunctionLibrary::WholeVerticesInTexture;
+TArray<int32> UMyBlueprintFunctionLibrary::TrianglesIndex;
+TMap<FVector, int32> UMyBlueprintFunctionLibrary::GlobalVertexIndexMap; 
 
 
 void UMyBlueprintFunctionLibrary::InitializeClosestCellVoronoiSeedXY(UTexture2D* Texture2D)
@@ -797,11 +798,11 @@ void UMyBlueprintFunctionLibrary::AssignVertexUniqueIndex()
 	{
 
 		const FVerticesEdgesStruct CurrentVertex = ProcessedVertices[V];
-		FVector VertexPos = FVector(CurrentVertex.VertexPosition.X, CurrentVertex.VertexPosition.Y, 0.0f);
-		if(!VertexIndexMap.Contains(VertexPos))
+		FVector VertexPosition = FVector(CurrentVertex.VertexPosition.X, CurrentVertex.VertexPosition.Y, 0.0f);
+		if(!VertexIndexMap.Contains(VertexPosition))
 		{
 			int32 NewIndex = VertexIndexMap.Num();
-			VertexIndexMap.Add(VertexPos, NewIndex);
+			VertexIndexMap.Add(VertexPosition, NewIndex);
 		}
 	}
 	
@@ -819,14 +820,14 @@ void UMyBlueprintFunctionLibrary::DistinguishEachCell(UTexture2D* Texture2D)
 	for (int i = 0; i < ProcessedVertices.Num(); i++)
 	{
 		const FVerticesEdgesStruct& CurrentVertex = ProcessedVertices[i];
-		const FVector VertexPos(CurrentVertex.VertexPosition.X, CurrentVertex.VertexPosition.Y, 0.0f);
+		const FVector VtxPos(CurrentVertex.VertexPosition.X, CurrentVertex.VertexPosition.Y, 0.0f);
 
 		
 		for (int CellNumber : CurrentVertex.CurrentCellsUniqueNumbers)
 		{	
 			
 			TArray<FVector>& VertexArray = CellWithVerticesArrays.FindOrAdd(CellNumber);
-			VertexArray.AddUnique(VertexPos);  
+			VertexArray.AddUnique(VtxPos);  
 		}
 	}
 
@@ -960,7 +961,7 @@ void UMyBlueprintFunctionLibrary::AssignEachCellStruct()
 		FCellStruct CurrentCell;
 		CurrentCell.CellIndex = Allocation.Key;
 		CurrentCell.VertexPositionPairs = Allocation.Value;
-		CurrentCell.CentroidPosition = CurrentCell.CalculateCentroid();
+		
 
 
 		TArray<FPairedVerticesWith3DInfo> PairArrays = Allocation.Value;
@@ -989,6 +990,54 @@ void UMyBlueprintFunctionLibrary::AssignEachCellStruct()
 }
 
 
+
+void UMyBlueprintFunctionLibrary::SortVerticesInCells()
+{
+	for(int i = 0; i < Cells.Num(); i++)
+	{
+		FCellStruct& CurrentCell = Cells[i]; 
+		TArray<FVector> SortedVertices; 
+		TSet<FVector> VisitedVertices; 
+
+		if (CurrentCell.VertexPositionPairs.Num() == 0) continue;
+
+
+		FVector CurrentVertex = CurrentCell.VertexPositionPairs[0].FirstVertexPosition;
+		SortedVertices.Add(CurrentVertex);
+		VisitedVertices.Add(CurrentVertex);
+
+		bool bContinue = true;
+		while(bContinue) {
+			bContinue = false;
+			for (auto& Pair : CurrentCell.VertexPositionPairs)
+			{
+				if (CurrentVertex == Pair.FirstVertexPosition && !VisitedVertices.Contains(Pair.SecondVertexPosition))
+				{
+					SortedVertices.Add(Pair.SecondVertexPosition);
+					VisitedVertices.Add(Pair.SecondVertexPosition);
+					CurrentVertex = Pair.SecondVertexPosition;
+					bContinue = true;
+					break;
+				}
+				else if (CurrentVertex == Pair.SecondVertexPosition && !VisitedVertices.Contains(Pair.FirstVertexPosition))
+				{
+					SortedVertices.Add(Pair.FirstVertexPosition);
+					VisitedVertices.Add(Pair.FirstVertexPosition);
+					CurrentVertex = Pair.FirstVertexPosition;
+					bContinue = true;
+					break;
+				}
+			}
+		}
+
+		
+		CurrentCell.VerticesPosition = SortedVertices;
+	}
+
+
+	
+}
+
 void UMyBlueprintFunctionLibrary::PrintCellsArray()
 {
 	UE_LOG(LogTemp, Log, TEXT("Printing Cells Array..."));
@@ -1007,18 +1056,99 @@ void UMyBlueprintFunctionLibrary::PrintCellsArray()
 												 *Pair.FirstVertexPosition.ToString(), *Pair.SecondVertexPosition.ToString());
 		}
 
-		UE_LOG(LogTemp, Log, TEXT("Cell ID: %d, Vertex Index Pairs: %s, Vertex Position Pairs: %s, Centroid: %s"),
+		FString VtxPos;
+		for (const FVector& Vertex : Cell.VerticesPosition)
+		{
+			VtxPos += FString::Printf(TEXT("(%s) "), *Vertex.ToString());
+		}
+
+		UE_LOG(LogTemp, Log, TEXT("Cell ID: %d, Vertex Index Pairs: %s, Vertex Position Pairs: %s, Vertices Positions: %s"),
 			   Cell.CellIndex,
 			   *VertexPairsInfo,
 			   *PositionPairsInfo,
-			   *Cell.CentroidPosition.ToString());
+			   *VtxPos);
 	}
 	UE_LOG(LogTemp, Log, TEXT("Finished Printing Cells Array."));
 }
 
-void UMyBlueprintFunctionLibrary::MakeTriangle(UProceduralMeshComponent* Mesh,TArray<FVector> VtxPos, TArray<int32> VtxIndex)
+
+void MakeTriangle(TArray<int32> VtxIndex, int32 CenterIndex)
 {
-	
-	Mesh->CreateMeshSection(0,VtxPos,VtxIndex,TArray<FVector>(), TArray<FVector2d>(), TArray<FColor>(), TArray<FProcMeshTangent>(), true);
+	   
+    for (int i = 0; i < VtxIndex.Num(); ++i)
+    {
+        int32 NextIndex = (i + 1) % VtxIndex.Num(); 
+        UMyBlueprintFunctionLibrary::TrianglesIndex.Add(VtxIndex[i]);
+    	UMyBlueprintFunctionLibrary::TrianglesIndex.Add(VtxIndex[NextIndex]);
+    	UMyBlueprintFunctionLibrary::TrianglesIndex.Add(CenterIndex); 
+    }
+
+    
 
 }
+
+
+float CalculatePolygonArea(const TArray<FVector>& Vertices)
+{
+	float Area = 0.0;
+	int N = Vertices.Num();
+	for (int i = 0; i < N; i++)
+	{
+		FVector Current = Vertices[i];
+		FVector Next = Vertices[(i + 1) % N];
+		Area += Current.X * Next.Y - Next.X * Current.Y;
+	}
+	return Area * 0.5;
+}
+
+void UMyBlueprintFunctionLibrary::CreateVoronoiShapePolygon(UProceduralMeshComponent* ProceduralMesh)
+{
+
+	for(FCellStruct& CurrentCell : Cells)
+	{
+		TArray<int32> CellVertexIndices;
+		
+		for(const FVector& Vertex : CurrentCell.VerticesPosition)
+		{
+			if(!GlobalVertexIndexMap.Contains(Vertex))
+			{
+				GlobalVertexIndexMap.Add(Vertex, WholeVerticesInTexture.Num());
+				WholeVerticesInTexture.Add(Vertex);
+				
+			}
+			CellVertexIndices.Add(GlobalVertexIndexMap[Vertex]);
+			
+		}
+
+		FVector CentroidPos = CurrentCell.CalculateCentroid();
+		int32 CentroidIndex;
+		if (!GlobalVertexIndexMap.Contains(CentroidPos))
+		{
+			CentroidIndex = WholeVerticesInTexture.Num();
+			GlobalVertexIndexMap.Add(CentroidPos, CentroidIndex);
+			WholeVerticesInTexture.Add(CentroidPos);
+		}
+		else
+		{
+			CentroidIndex = GlobalVertexIndexMap[CentroidPos];
+		}
+
+		TArray<FVector> VerticesForAreaCalc;
+		for (int Index : CellVertexIndices)
+		{
+			VerticesForAreaCalc.Add(WholeVerticesInTexture[Index]);
+		}
+		float Area = CalculatePolygonArea(VerticesForAreaCalc);
+		if (Area > 0)  // 如果面积为负，则反转顶点顺序
+		{
+			Algo::Reverse(CellVertexIndices);
+		}
+
+		MakeTriangle(CellVertexIndices, CentroidIndex);
+		
+	}
+
+	ProceduralMesh->CreateMeshSection(0, WholeVerticesInTexture, TrianglesIndex, TArray<FVector>(), TArray<FVector2D>(), TArray<FColor>(), TArray<FProcMeshTangent>(), true);
+	
+}
+
