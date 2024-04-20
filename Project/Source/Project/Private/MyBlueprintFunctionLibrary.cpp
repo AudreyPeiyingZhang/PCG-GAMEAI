@@ -1093,31 +1093,44 @@ void UMyBlueprintFunctionLibrary::CheckWindingOrder(TArray<int32>&  VtxIndex)
 void UMyBlueprintFunctionLibrary::MakeTriangle(TArray<int32> VtxIndex)
 {
 	   
-	for (int i = 0; i < VtxIndex.Num(); i += 3)
+	/*for (int i = 0; i < VtxIndex.Num(); i += 3)
 	{
 		Triangles.Add(VtxIndex[i]);
 		Triangles.Add(VtxIndex[i + 1]);
 		Triangles.Add(VtxIndex[i + 2]);
-	}
-
+	}*/
+	
     
 
 }
 
-void  UMyBlueprintFunctionLibrary::DivideQuadIntoTriangle(TArray<FVector> TwoBaseVertices, TArray<FVector> TwoMiddleVertices, TArray<int32>& DownLeftTriangle, TArray<int32>& DownRightTriangle)
+
+int32 UMyBlueprintFunctionLibrary::AddVertex(FVector VtxPos)
+{
+	if(!GlobalVertexIndexMap.Contains(VtxPos))
+	{
+		GlobalVertexIndexMap.Add(VtxPos, WholeVerticesInTexture.Num());
+		WholeVerticesInTexture.Add(VtxPos);
+		return WholeVerticesInTexture.Num();
+	}
+	else
+	{
+		return GlobalVertexIndexMap[VtxPos];
+	}
+}
+
+void  UMyBlueprintFunctionLibrary::DivideQuadIntoTriangle(TArray<int32> TwoBaseVerticesIndex, TArray<int32> TwoMiddleVerticesIndex, TArray<int32>& DownLeftTriangle, TArray<int32>& DownRightTriangle)
 {
 
-	DownLeftTriangle.SetNum(3);
 
-	DownLeftTriangle.Add(GlobalVertexIndexMap[TwoBaseVertices[0]]);
-	DownLeftTriangle.Add(GlobalVertexIndexMap[TwoMiddleVertices[0]]);
-	DownLeftTriangle.Add(GlobalVertexIndexMap[TwoMiddleVertices[1]]);
+	DownLeftTriangle.Add(TwoBaseVerticesIndex[0]);
+	DownLeftTriangle.Add(TwoMiddleVerticesIndex[0]);
+	DownLeftTriangle.Add(TwoMiddleVerticesIndex[1]);
 
 
-	DownRightTriangle.SetNum(3);
-	DownRightTriangle.Add(GlobalVertexIndexMap[TwoBaseVertices[0]]);
-	DownRightTriangle.Add(GlobalVertexIndexMap[TwoBaseVertices[1]]);
-	DownRightTriangle.Add(GlobalVertexIndexMap[TwoMiddleVertices[1]]);
+	DownRightTriangle.Add(TwoBaseVerticesIndex[0]);
+	DownRightTriangle.Add(TwoBaseVerticesIndex[1]);
+	DownRightTriangle.Add(TwoMiddleVerticesIndex[1]);
 
 	
 }
@@ -1129,83 +1142,67 @@ FVector RoundVector(FVector Vec, float Precision = 0.001f)
 				   FMath::RoundToFloat(Vec.Z / Precision) * Precision);
 }
 
-void UMyBlueprintFunctionLibrary::TriangleFanSubdivide(TArray<int32> VtxIndex)
+void UMyBlueprintFunctionLibrary::TriangleFanSubdivide(TArray<int32> VtxIndex, TArray<FVector> VtxPos)
 {
-	TArray<FVector> TwoBase;
+	TArray<int32> TwoBase;
+	TwoBase.Empty();
 	TwoBase.SetNum(2);
 	
-	TArray<FVector> TwoMid;
+	TArray<int32> TwoMid;
+	TwoMid.Empty();
 	TwoMid.SetNum(2);
 	
-	const FVector CenterPos = FindKeyByValue(GlobalVertexIndexMap, VtxIndex[0]);
-	const FVector FirstPos = FindKeyByValue(GlobalVertexIndexMap, VtxIndex[1]);
-	const FVector SecondPos = FindKeyByValue(GlobalVertexIndexMap, VtxIndex[2]);
+	const FVector CenterPos = VtxPos[0];
+	const FVector FirstPos = VtxPos[1];
+	const FVector SecondPos = VtxPos[2];
 	
 	const FVector MidBetweenCenterAndFirst = (CenterPos + FirstPos)/2;
 	const FVector MidBetweenCenterAndSecond = (SecondPos + CenterPos)/2;
 
-	const FVector RoundMidBetweenCenterAndFirst = RoundVector(MidBetweenCenterAndFirst);
-	const FVector RoundMidBetweenCenterAndSecond = RoundVector(MidBetweenCenterAndSecond);
-
+	const int32 MidBetweenCenterAndFirstIndex = AddVertex(MidBetweenCenterAndFirst);
+	const int32 MidBetweenCenterAndSecondIndex = AddVertex(MidBetweenCenterAndSecond);
 	
-	if(!GlobalVertexIndexMap.Contains(RoundMidBetweenCenterAndFirst))
-	{
-		GlobalVertexIndexMap.Add(RoundMidBetweenCenterAndFirst, WholeVerticesInTexture.Num());
-		WholeVerticesInTexture.Add(RoundMidBetweenCenterAndFirst);
-				
-	}
-	
-	if(!GlobalVertexIndexMap.Contains(RoundMidBetweenCenterAndSecond))
-	{
-		GlobalVertexIndexMap.Add(RoundMidBetweenCenterAndSecond, WholeVerticesInTexture.Num());
-		WholeVerticesInTexture.Add(RoundMidBetweenCenterAndSecond);
-				
-	}
 
-	TwoBase.Add(FirstPos);
-	TwoBase.Add(SecondPos);
+	TwoBase.Add(VtxIndex[1]);
+	TwoBase.Add(VtxIndex[2]);
 
-	TwoMid.Add(RoundMidBetweenCenterAndFirst);
-	TwoMid.Add(RoundMidBetweenCenterAndSecond);
+	TwoMid.Add(MidBetweenCenterAndFirstIndex);
+	TwoMid.Add(MidBetweenCenterAndSecondIndex);
 
 	
 	//
 	TArray<int32> AllTriangles;
+	
 	//
 	TArray<int32> TopTriangle;
+	TopTriangle.Empty();
 	TopTriangle.SetNum(3);
-	TopTriangle.Add(GlobalVertexIndexMap[CenterPos]);
-	TopTriangle.Add(GlobalVertexIndexMap[RoundMidBetweenCenterAndFirst]);
-	TopTriangle.Add(GlobalVertexIndexMap[RoundMidBetweenCenterAndSecond]);
-	CheckWindingOrder(TopTriangle);
+	TopTriangle.Add(VtxIndex[0]);
+	TopTriangle.Add(MidBetweenCenterAndFirstIndex);
+	TopTriangle.Add(MidBetweenCenterAndSecondIndex);
+	//CheckWindingOrder(TopTriangle);
 
 	//
 	TArray<int32> DownLeftTriangle;
+	DownLeftTriangle.Empty();
+	DownLeftTriangle.SetNum(3);
+	
 
 	TArray<int32> DownRightTriangle;
+	DownRightTriangle.Empty();
+	DownRightTriangle.SetNum(3);
 	//create quad
-
-	for (const FVector& Vertex : TwoBase) {
-		if (!GlobalVertexIndexMap.Contains(Vertex)) {
-			UE_LOG(LogTemp, Error, TEXT("Base vertex not found in map: %s"), *Vertex.ToString());
-		}
-	}
-
-	for (const FVector& Vertex : TwoMid) {
-		if (!GlobalVertexIndexMap.Contains(Vertex)) {
-			UE_LOG(LogTemp, Error, TEXT("Middle vertex not found in map: %s"), *Vertex.ToString());
-		}
-	}
+	
 	DivideQuadIntoTriangle(TwoBase, TwoMid, DownLeftTriangle,DownRightTriangle );
-	CheckWindingOrder(DownLeftTriangle);
-	CheckWindingOrder(DownRightTriangle);
+	//CheckWindingOrder(DownLeftTriangle);
+	//CheckWindingOrder(DownRightTriangle);
 
 	//
 	AllTriangles.Append(TopTriangle);
 	AllTriangles.Append(DownLeftTriangle);
 	AllTriangles.Append(DownRightTriangle);
 
-	MakeTriangle(AllTriangles);
+	Triangles.Append(AllTriangles);
 	
 	
 	
@@ -1224,6 +1221,9 @@ FVector UMyBlueprintFunctionLibrary::FindKeyByValue(const TMap<FVector, int32>& 
 	}
 	return FVector();
 }
+
+
+
 
 float UMyBlueprintFunctionLibrary::CalculatePolygonArea(const TArray<FVector>& VerticesPos)
 {
@@ -1244,47 +1244,40 @@ void UMyBlueprintFunctionLibrary::CreateVoronoiShapePolygon(UProceduralMeshCompo
 	for(FCellStruct& CurrentCell : Cells)
 	{
 		TArray<int32> CellVertexIndices;
+		TArray<FVector> CellVertexPos;
 		//map index
 		for(const FVector& Vertex : CurrentCell.VerticesPosition)
 		{
-			if(!GlobalVertexIndexMap.Contains(Vertex))
-			{
-				GlobalVertexIndexMap.Add(Vertex, WholeVerticesInTexture.Num());
-				WholeVerticesInTexture.Add(Vertex);
-				
-			}
-			CellVertexIndices.Add(GlobalVertexIndexMap[Vertex]);
+			int32 VertexIndex = AddVertex(Vertex);
+			CellVertexIndices.Add(VertexIndex);
+			CellVertexPos.Add(Vertex);
 			
 		}
 
 		//get center point 
 		FVector CentroidPos = CurrentCell.CalculateCentroid();
-		int32 CentroidIndex;
-		if (!GlobalVertexIndexMap.Contains(CentroidPos))
-		{
-			CentroidIndex = WholeVerticesInTexture.Num();
-			GlobalVertexIndexMap.Add(CentroidPos, CentroidIndex);
-			WholeVerticesInTexture.Add(CentroidPos);
-		}
-		else
-		{
-			CentroidIndex = GlobalVertexIndexMap[CentroidPos];
-		}
-
+		const int32 CentroidIndex = AddVertex(CentroidPos);
+		
 		//for each triangle
 		for(int32 i =0;i<CellVertexIndices.Num();i++)
 		{
-			TArray<int32> SingleTriangle;
-			SingleTriangle.SetNum(3);
+			TArray<int32> SingleTriangleIndex;
+			SingleTriangleIndex.SetNum(3);
+			TArray<FVector> SingleTrianglePos;
+			SingleTrianglePos.SetNum(3);
 			const int32 CenterIndex = CentroidIndex;
 			const int32 FirstVtxIndex = CellVertexIndices[i];
 			const int32 NextVtxIndex = CellVertexIndices[(i + 1) % CellVertexIndices.Num()];
-			SingleTriangle.Add(CenterIndex);
-			SingleTriangle.Add(FirstVtxIndex);
-			SingleTriangle.Add(NextVtxIndex);
+			SingleTriangleIndex.Add(CenterIndex);
+			SingleTriangleIndex.Add(FirstVtxIndex);
+			SingleTriangleIndex.Add(NextVtxIndex);
+
+			SingleTrianglePos.Add(CentroidPos);
+			SingleTrianglePos.Add(CellVertexPos[i]);
+			SingleTrianglePos.Add(CellVertexPos[(i + 1) % CellVertexIndices.Num()]);
 			
 
-			TriangleFanSubdivide(SingleTriangle);
+			TriangleFanSubdivide(SingleTriangleIndex,SingleTrianglePos);
 			
 		}
 		

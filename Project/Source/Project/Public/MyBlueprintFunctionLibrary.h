@@ -249,18 +249,19 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Polygons Calculation")
 	static void CreateVoronoiShapePolygon(UProceduralMeshComponent* ProceduralMesh);
 	UFUNCTION(BlueprintCallable, Category = "Polygons Calculation")
-	static void TriangleFanSubdivide(TArray<int32> VtxIndex);
+	static void TriangleFanSubdivide(TArray<int32> VtxIndex,TArray<FVector> VtxPos);
 	UFUNCTION(BlueprintCallable, Category = "Polygons Calculation")
 	static FVector FindKeyByValue(const TMap<FVector, int32>& Map, int32 ValueToFind);
 	UFUNCTION(BlueprintCallable, Category = "Polygons Calculation")
-	static void DivideQuadIntoTriangle(TArray<FVector> TwoBaseVertices, TArray<FVector> TwoMiddleVertices, TArray<int32>& DownLeftTriangle, TArray<int32>& DownRightTriangle);
+	static void DivideQuadIntoTriangle(TArray<int32> TwoBaseVerticesIndex, TArray<int32> TwoMiddleVerticesIndex, TArray<int32>& DownLeftTriangle, TArray<int32>& DownRightTriangle);
 	UFUNCTION(BlueprintCallable, Category = "Polygons Calculation")
 	static void CheckWindingOrder(TArray<int32>& VtxIndex);
 	UFUNCTION(BlueprintCallable, Category = "Polygons Calculation")
 	static void MakeTriangle(TArray<int32> VtxIndex);
 	UFUNCTION(BlueprintCallable, Category = "Polygons Calculation")
 	static float CalculatePolygonArea(const TArray<FVector>& VerticesPos);
-	
+	UFUNCTION(BlueprintCallable, Category = "Polygons Calculation")
+	static int32 AddVertex(FVector VtxPos);
 
 	
 
