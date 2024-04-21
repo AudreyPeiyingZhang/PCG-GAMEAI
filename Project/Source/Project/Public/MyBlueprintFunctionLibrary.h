@@ -262,6 +262,8 @@ public:
 	static float CalculatePolygonArea(const TArray<FVector>& VerticesPos);
 	UFUNCTION(BlueprintCallable, Category = "Polygons Calculation")
 	static int32 AddVertex(FVector VtxPos);
+	UFUNCTION(BlueprintCallable, Category = "Polygons Calculation")
+	static FVector RoundVector(FVector Vec, float Precision = 0.001f);
 
 	
 

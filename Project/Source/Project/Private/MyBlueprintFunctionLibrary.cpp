@@ -1107,16 +1107,18 @@ void UMyBlueprintFunctionLibrary::MakeTriangle(TArray<int32> VtxIndex)
 
 int32 UMyBlueprintFunctionLibrary::AddVertex(FVector VtxPos)
 {
-	if(!GlobalVertexIndexMap.Contains(VtxPos))
+	VtxPos = RoundVector(VtxPos);
+	int32 VertexIndex = WholeVerticesInTexture.Num();
+	if (!GlobalVertexIndexMap.Contains(VtxPos))
 	{
-		GlobalVertexIndexMap.Add(VtxPos, WholeVerticesInTexture.Num());
+		GlobalVertexIndexMap.Add(VtxPos, VertexIndex);
 		WholeVerticesInTexture.Add(VtxPos);
-		return WholeVerticesInTexture.Num();
 	}
 	else
 	{
-		return GlobalVertexIndexMap[VtxPos];
+		VertexIndex = GlobalVertexIndexMap[VtxPos];
 	}
+	return VertexIndex;
 }
 
 void  UMyBlueprintFunctionLibrary::DivideQuadIntoTriangle(TArray<int32> TwoBaseVerticesIndex, TArray<int32> TwoMiddleVerticesIndex, TArray<int32>& DownLeftTriangle, TArray<int32>& DownRightTriangle)
@@ -1135,7 +1137,7 @@ void  UMyBlueprintFunctionLibrary::DivideQuadIntoTriangle(TArray<int32> TwoBaseV
 	
 }
 
-FVector RoundVector(FVector Vec, float Precision = 0.001f)
+FVector UMyBlueprintFunctionLibrary::RoundVector(FVector Vec, float Precision)
 {
 	return FVector(FMath::RoundToFloat(Vec.X / Precision) * Precision,
 				   FMath::RoundToFloat(Vec.Y / Precision) * Precision,
@@ -1146,12 +1148,11 @@ void UMyBlueprintFunctionLibrary::TriangleFanSubdivide(TArray<int32> VtxIndex, T
 {
 	TArray<int32> TwoBase;
 	TwoBase.Empty();
-	TwoBase.SetNum(2);
+
 	
 	TArray<int32> TwoMid;
 	TwoMid.Empty();
-	TwoMid.SetNum(2);
-	
+
 	const FVector CenterPos = VtxPos[0];
 	const FVector FirstPos = VtxPos[1];
 	const FVector SecondPos = VtxPos[2];
@@ -1172,30 +1173,31 @@ void UMyBlueprintFunctionLibrary::TriangleFanSubdivide(TArray<int32> VtxIndex, T
 	
 	//
 	TArray<int32> AllTriangles;
+	AllTriangles.Empty();
 	
 	//
 	TArray<int32> TopTriangle;
 	TopTriangle.Empty();
-	TopTriangle.SetNum(3);
+
 	TopTriangle.Add(VtxIndex[0]);
 	TopTriangle.Add(MidBetweenCenterAndFirstIndex);
 	TopTriangle.Add(MidBetweenCenterAndSecondIndex);
-	//CheckWindingOrder(TopTriangle);
+	CheckWindingOrder(TopTriangle);
 
 	//
 	TArray<int32> DownLeftTriangle;
 	DownLeftTriangle.Empty();
-	DownLeftTriangle.SetNum(3);
+
 	
 
 	TArray<int32> DownRightTriangle;
 	DownRightTriangle.Empty();
-	DownRightTriangle.SetNum(3);
+
 	//create quad
 	
 	DivideQuadIntoTriangle(TwoBase, TwoMid, DownLeftTriangle,DownRightTriangle );
-	//CheckWindingOrder(DownLeftTriangle);
-	//CheckWindingOrder(DownRightTriangle);
+	CheckWindingOrder(DownLeftTriangle);
+	CheckWindingOrder(DownRightTriangle);
 
 	//
 	AllTriangles.Append(TopTriangle);
@@ -1203,7 +1205,6 @@ void UMyBlueprintFunctionLibrary::TriangleFanSubdivide(TArray<int32> VtxIndex, T
 	AllTriangles.Append(DownRightTriangle);
 
 	Triangles.Append(AllTriangles);
-	
 	
 	
 
@@ -1223,8 +1224,6 @@ FVector UMyBlueprintFunctionLibrary::FindKeyByValue(const TMap<FVector, int32>& 
 }
 
 
-
-
 float UMyBlueprintFunctionLibrary::CalculatePolygonArea(const TArray<FVector>& VerticesPos)
 {
 	float Area = 0.0;
@@ -1238,13 +1237,18 @@ float UMyBlueprintFunctionLibrary::CalculatePolygonArea(const TArray<FVector>& V
 	return Area * 0.5;
 }
 
+
 void UMyBlueprintFunctionLibrary::CreateVoronoiShapePolygon(UProceduralMeshComponent* ProceduralMesh)
 {
+	WholeVerticesInTexture.Empty();
+	GlobalVertexIndexMap.Empty();
 
 	for(FCellStruct& CurrentCell : Cells)
 	{
 		TArray<int32> CellVertexIndices;
+		CellVertexIndices.Empty();
 		TArray<FVector> CellVertexPos;
+		CellVertexPos.Empty();
 		//map index
 		for(const FVector& Vertex : CurrentCell.VerticesPosition)
 		{
@@ -1258,13 +1262,17 @@ void UMyBlueprintFunctionLibrary::CreateVoronoiShapePolygon(UProceduralMeshCompo
 		FVector CentroidPos = CurrentCell.CalculateCentroid();
 		const int32 CentroidIndex = AddVertex(CentroidPos);
 		
+
+		
 		//for each triangle
-		for(int32 i =0;i<CellVertexIndices.Num();i++)
+		for(int i =0;i<CellVertexIndices.Num();i++)
 		{
 			TArray<int32> SingleTriangleIndex;
-			SingleTriangleIndex.SetNum(3);
+			SingleTriangleIndex.Empty();
+			
 			TArray<FVector> SingleTrianglePos;
-			SingleTrianglePos.SetNum(3);
+			SingleTrianglePos.Empty();
+			
 			const int32 CenterIndex = CentroidIndex;
 			const int32 FirstVtxIndex = CellVertexIndices[i];
 			const int32 NextVtxIndex = CellVertexIndices[(i + 1) % CellVertexIndices.Num()];
@@ -1275,16 +1283,10 @@ void UMyBlueprintFunctionLibrary::CreateVoronoiShapePolygon(UProceduralMeshCompo
 			SingleTrianglePos.Add(CentroidPos);
 			SingleTrianglePos.Add(CellVertexPos[i]);
 			SingleTrianglePos.Add(CellVertexPos[(i + 1) % CellVertexIndices.Num()]);
-			
 
 			TriangleFanSubdivide(SingleTriangleIndex,SingleTrianglePos);
 			
 		}
-		
-		
-
-		
-		
 	}
 
 	ProceduralMesh->CreateMeshSection(0, WholeVerticesInTexture, Triangles, TArray<FVector>(), TArray<FVector2D>(), TArray<FColor>(), TArray<FProcMeshTangent>(), true);
