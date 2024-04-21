@@ -1074,18 +1074,41 @@ void UMyBlueprintFunctionLibrary::PrintCellsArray()
 	UE_LOG(LogTemp, Log, TEXT("Finished Printing Cells Array."));
 }
 
+float UMyBlueprintFunctionLibrary::CalculatePolygonArea(const TArray<FVector>& VerticesPos, EPlane Plane)
+{
+	float Area = 0.0f;
+	int N = VerticesPos.Num();
+	for (int i = 0; i < N; i++)
+	{
+		const FVector& Current = VerticesPos[i];
+		const FVector& Next = VerticesPos[(i + 1) % N];
+		switch (Plane) {
+		case EPlane::XY:
+			Area += (Current.X * Next.Y - Next.X * Current.Y);
+			break;
+		case EPlane::XZ:
+			Area += (Current.X * Next.Z - Next.X * Current.Z);
+			break;
+		case EPlane::YZ:
+			Area += (Current.Y * Next.Z - Next.Y * Current.Z);
+			break;
+		}
+	}
+	return 0.5f * Area;
+}
 
-void UMyBlueprintFunctionLibrary::CheckWindingOrder(TArray<int32>&  VtxIndex)
+void UMyBlueprintFunctionLibrary::CheckWindingOrder(TArray<int32>&  VtxIndex, TArray<FVector>& VertexPositions, EPlane Plane)
 {
 	TArray<FVector> VerticesForAreaCalc;
 	for (int Index : VtxIndex)
 	{
 		VerticesForAreaCalc.Add(FindKeyByValue(GlobalVertexIndexMap, Index));
 	}
-	float Area = CalculatePolygonArea(VerticesForAreaCalc);
+	float Area = CalculatePolygonArea(VerticesForAreaCalc,Plane);
 	if (Area > 0)  
 	{
 		Algo::Reverse(VtxIndex);
+		Algo::Reverse(VertexPositions);
 	}
 	
 }
@@ -1125,14 +1148,16 @@ void  UMyBlueprintFunctionLibrary::DivideQuadIntoTriangle(TArray<int32> TwoBaseV
 {
 
 
-	DownLeftTriangle.Add(TwoBaseVerticesIndex[0]);
-	DownLeftTriangle.Add(TwoMiddleVerticesIndex[0]);
 	DownLeftTriangle.Add(TwoMiddleVerticesIndex[1]);
+	DownLeftTriangle.Add(TwoMiddleVerticesIndex[0]);
+	DownLeftTriangle.Add(TwoBaseVerticesIndex[0]);
+	
+	
 
-
+	DownRightTriangle.Add(TwoMiddleVerticesIndex[1]);
 	DownRightTriangle.Add(TwoBaseVerticesIndex[0]);
 	DownRightTriangle.Add(TwoBaseVerticesIndex[1]);
-	DownRightTriangle.Add(TwoMiddleVerticesIndex[1]);
+	
 
 	
 }
@@ -1142,6 +1167,50 @@ FVector UMyBlueprintFunctionLibrary::RoundVector(FVector Vec, float Precision)
 	return FVector(FMath::RoundToFloat(Vec.X / Precision) * Precision,
 				   FMath::RoundToFloat(Vec.Y / Precision) * Precision,
 				   FMath::RoundToFloat(Vec.Z / Precision) * Precision);
+}
+
+void UMyBlueprintFunctionLibrary::ExtrudePolygon(TArray<int32> BaseTriangle, TArray<int32>& ExtrudeTriangles)
+{
+	
+	ExtrudeTriangles.Empty();
+	
+	TArray<int32> NewVtxArray;
+	NewVtxArray.Empty();
+	for(int i =0; i<BaseTriangle.Num();i++)
+	{
+		FVector NewVtxPos = WholeVerticesInTexture[BaseTriangle[i]];
+		float Height = 20.0f;
+		NewVtxPos.Z += Height;
+		int32 NewVtxIndex = AddVertex(NewVtxPos);
+		NewVtxArray.Add(NewVtxIndex);
+		
+	}
+
+
+	TArray<int32> TwoBaseVtx;
+	TwoBaseVtx.Empty();
+	TwoBaseVtx.Add(BaseTriangle[2]);
+	TwoBaseVtx.Add(BaseTriangle[0]);
+
+
+	TArray<int32> TwoTopVtx;
+	TwoTopVtx.Empty();
+	TwoTopVtx.Add(NewVtxArray[2]);
+	TwoTopVtx.Add(NewVtxArray[0]);
+
+	TArray<int32> FirstSideTriangle;
+	FirstSideTriangle.Empty();
+	TArray<int32> SecondSideTriangle;
+	SecondSideTriangle.Empty();
+
+	DivideQuadIntoTriangle(TwoBaseVtx, TwoTopVtx, FirstSideTriangle, SecondSideTriangle);
+
+	
+	ExtrudeTriangles.Append(NewVtxArray);
+	ExtrudeTriangles.Append(FirstSideTriangle);
+	ExtrudeTriangles.Append(SecondSideTriangle);
+
+	
 }
 
 void UMyBlueprintFunctionLibrary::TriangleFanSubdivide(TArray<int32> VtxIndex, TArray<FVector> VtxPos)
@@ -1179,10 +1248,12 @@ void UMyBlueprintFunctionLibrary::TriangleFanSubdivide(TArray<int32> VtxIndex, T
 	TArray<int32> TopTriangle;
 	TopTriangle.Empty();
 
+	TopTriangle.Add(MidBetweenCenterAndSecondIndex);
 	TopTriangle.Add(VtxIndex[0]);
 	TopTriangle.Add(MidBetweenCenterAndFirstIndex);
-	TopTriangle.Add(MidBetweenCenterAndSecondIndex);
-	CheckWindingOrder(TopTriangle);
+	
+
+	
 
 	//
 	TArray<int32> DownLeftTriangle;
@@ -1196,13 +1267,20 @@ void UMyBlueprintFunctionLibrary::TriangleFanSubdivide(TArray<int32> VtxIndex, T
 	//create quad
 	
 	DivideQuadIntoTriangle(TwoBase, TwoMid, DownLeftTriangle,DownRightTriangle );
-	CheckWindingOrder(DownLeftTriangle);
-	CheckWindingOrder(DownRightTriangle);
+
 
 	//
 	AllTriangles.Append(TopTriangle);
 	AllTriangles.Append(DownLeftTriangle);
 	AllTriangles.Append(DownRightTriangle);
+
+	TArray<int32> ExtrudeTriangles;
+	ExtrudeTriangles.Empty();
+
+
+	ExtrudePolygon(TopTriangle,ExtrudeTriangles);
+	
+	AllTriangles.Append(ExtrudeTriangles);
 
 	Triangles.Append(AllTriangles);
 	
@@ -1222,21 +1300,6 @@ FVector UMyBlueprintFunctionLibrary::FindKeyByValue(const TMap<FVector, int32>& 
 	}
 	return FVector();
 }
-
-
-float UMyBlueprintFunctionLibrary::CalculatePolygonArea(const TArray<FVector>& VerticesPos)
-{
-	float Area = 0.0;
-	int N = VerticesPos.Num();
-	for (int i = 0; i < N; i++)
-	{
-		const FVector Current = VerticesPos[i];
-		const FVector Next = VerticesPos[(i + 1) % N];
-		Area += Current.X * Next.Y - Next.X * Current.Y;
-	}
-	return Area * 0.5;
-}
-
 
 void UMyBlueprintFunctionLibrary::CreateVoronoiShapePolygon(UProceduralMeshComponent* ProceduralMesh)
 {
@@ -1261,8 +1324,10 @@ void UMyBlueprintFunctionLibrary::CreateVoronoiShapePolygon(UProceduralMeshCompo
 		//get center point 
 		FVector CentroidPos = CurrentCell.CalculateCentroid();
 		const int32 CentroidIndex = AddVertex(CentroidPos);
-		
 
+		CheckWindingOrder(CellVertexIndices, CellVertexPos, EPlane::XY); 
+		
+	
 		
 		//for each triangle
 		for(int i =0;i<CellVertexIndices.Num();i++)

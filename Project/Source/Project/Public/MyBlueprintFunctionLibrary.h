@@ -10,6 +10,16 @@
  * 
  */
 
+
+
+UENUM(BlueprintType)
+enum class EPlane : uint8
+{
+	XY,
+	XZ,
+	YZ
+};
+
 USTRUCT(BlueprintType)
 struct FVerticesEdgesStruct
 {
@@ -255,15 +265,18 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Polygons Calculation")
 	static void DivideQuadIntoTriangle(TArray<int32> TwoBaseVerticesIndex, TArray<int32> TwoMiddleVerticesIndex, TArray<int32>& DownLeftTriangle, TArray<int32>& DownRightTriangle);
 	UFUNCTION(BlueprintCallable, Category = "Polygons Calculation")
-	static void CheckWindingOrder(TArray<int32>& VtxIndex);
+	static void CheckWindingOrder(TArray<int32>& VtxIndex, TArray<FVector>& VertexPositions, EPlane Plane = EPlane::XY);
 	UFUNCTION(BlueprintCallable, Category = "Polygons Calculation")
 	static void MakeTriangle(TArray<int32> VtxIndex);
 	UFUNCTION(BlueprintCallable, Category = "Polygons Calculation")
-	static float CalculatePolygonArea(const TArray<FVector>& VerticesPos);
+	static float CalculatePolygonArea(const TArray<FVector>& VerticesPos, EPlane Plane = EPlane::XY);
 	UFUNCTION(BlueprintCallable, Category = "Polygons Calculation")
 	static int32 AddVertex(FVector VtxPos);
 	UFUNCTION(BlueprintCallable, Category = "Polygons Calculation")
 	static FVector RoundVector(FVector Vec, float Precision = 0.001f);
+	UFUNCTION(BlueprintCallable, Category = "Polygons Calculation")
+	static void ExtrudePolygon(TArray<int32> BaseTriangle, TArray<int32>& ExtrudeTriangles);
+
 
 	
 
