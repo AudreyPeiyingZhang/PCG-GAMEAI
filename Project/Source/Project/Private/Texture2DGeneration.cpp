@@ -41,9 +41,6 @@ void ATexture2DGeneration::BeginPlay()
 	Plane->SetMaterial(0, MaterialInstance);
 	//clear texture2d
 	UMyBlueprintFunctionLibrary::ClearTexture2D(pTexture, FColor::White);
-	UMyBlueprintFunctionLibrary::InitializeDistField(pTexture);
-	UMyBlueprintFunctionLibrary::InitializeGradientField(pTexture);
-	UMyBlueprintFunctionLibrary::InitializeClosestCellVoronoiSeedXY(pTexture);
 	//draw any (x,y) on texture2d pixel
 	//UMyBlueprintFunctionLibrary::SetTexture2DPixels(Texture2D, 20, 20, FColor::Red);
 	UMyBlueprintFunctionLibrary::VoronoiCalculation(pTexture,CellCount);

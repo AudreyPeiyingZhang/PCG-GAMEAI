@@ -20,6 +20,7 @@ enum class EPlane : uint8
 	YZ
 };
 
+
 USTRUCT(BlueprintType)
 struct FVerticesEdgesStruct
 {
@@ -190,6 +191,51 @@ public:
 };
 
 
+USTRUCT(BlueprintType)
+struct FVertexData
+{
+	GENERATED_BODY()
+
+public:
+	FVector VtxPos = FVector(0,0,0);
+
+	//local uv
+	FVector2D VtxUV0  = FVector2D(0,0);
+	//world uv
+	FVector2D VtxUV1 = FVector2D(0,0);
+	//distinguish UV Channel
+	// Road (0,0)
+	// Wall (0.5,0)
+	// Roof (1,0)
+	FVector2D VtxUV2 = FVector2D(0,0);
+	
+	//normal
+	FVector VtxNormal = FVector(0,0,0);
+
+
+	friend bool operator==(const FVertexData& Lhs, const FVertexData& Rhs)
+	{
+		return Lhs.VtxPos == Rhs.VtxPos &&
+			   Lhs.VtxUV0 == Rhs.VtxUV0 &&
+			   Lhs.VtxUV1 == Rhs.VtxUV1 &&
+			   Lhs.VtxUV2 == Rhs.VtxUV2 &&
+			   Lhs.VtxNormal == Rhs.VtxNormal;
+	}
+	
+	
+};
+// 自定义散列函数
+FORCEINLINE uint32 GetTypeHash(const FVertexData& VertexData)
+{
+	uint32 Hash = 0;
+	Hash = HashCombine(Hash, GetTypeHash(VertexData.VtxPos));
+	Hash = HashCombine(Hash, GetTypeHash(VertexData.VtxUV0));
+	Hash = HashCombine(Hash, GetTypeHash(VertexData.VtxUV1));
+	Hash = HashCombine(Hash, GetTypeHash(VertexData.VtxUV2));
+	Hash = HashCombine(Hash, GetTypeHash(VertexData.VtxNormal));
+	return Hash;
+}
+
 
 UCLASS()
 class PROJECT_API UMyBlueprintFunctionLibrary : public UBlueprintFunctionLibrary
@@ -259,19 +305,19 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Polygons Calculation")
 	static void CreateVoronoiShapePolygon(UProceduralMeshComponent* ProceduralMesh);
 	UFUNCTION(BlueprintCallable, Category = "Polygons Calculation")
-	static void TriangleFanSubdivide(TArray<int32> VtxIndex,TArray<FVector> VtxPos);
+	static void TriangleFanSubdivide(TArray<int32> VtxIndex,TArray<FVertexData> VtxData);
 	UFUNCTION(BlueprintCallable, Category = "Polygons Calculation")
 	static FVector FindKeyByValue(const TMap<FVector, int32>& Map, int32 ValueToFind);
 	UFUNCTION(BlueprintCallable, Category = "Polygons Calculation")
 	static void DivideQuadIntoTriangle(TArray<int32> TwoBaseVerticesIndex, TArray<int32> TwoMiddleVerticesIndex, TArray<int32>& DownLeftTriangle, TArray<int32>& DownRightTriangle);
 	UFUNCTION(BlueprintCallable, Category = "Polygons Calculation")
-	static void CheckWindingOrder(TArray<int32>& VtxIndex, TArray<FVector>& VertexPositions, EPlane Plane = EPlane::XY);
+	static void CheckWindingOrder(TArray<FVertexData>& VtxData,TArray<int32>& VtxIndex, EPlane Plane = EPlane::XY);
 	UFUNCTION(BlueprintCallable, Category = "Polygons Calculation")
 	static void MakeTriangle(TArray<int32> VtxIndex);
 	UFUNCTION(BlueprintCallable, Category = "Polygons Calculation")
 	static float CalculatePolygonArea(const TArray<FVector>& VerticesPos, EPlane Plane = EPlane::XY);
 	UFUNCTION(BlueprintCallable, Category = "Polygons Calculation")
-	static int32 AddVertex(FVector VtxPos);
+	static int32 AddVertex(FVertexData VertexData);
 	UFUNCTION(BlueprintCallable, Category = "Polygons Calculation")
 	static FVector RoundVector(FVector Vec, float Precision = 0.001f);
 	UFUNCTION(BlueprintCallable, Category = "Polygons Calculation")
@@ -281,14 +327,10 @@ public:
 	
 
 	
-public:	
+private:	
 	static TArray<FVector2D> VoronoiSeeds;
 	static TArray<FVector2D> Vertices;
 	static TArray<FVector2D> MergedVertices;
-	static TArray<TArray<float>> DistField;
-	static void InitializeDistField(UTexture2D* Texture2D);
-	static TArray<TArray<float>> GradientField;
-	static void InitializeGradientField(UTexture2D* Texture2D);
 	static TArray<TArray<FVector2D>> ClosestCellVoronoiSeedXY;
 	static void InitializeClosestCellVoronoiSeedXY(UTexture2D* Texture2D);
 	static TArray<FVerticesEdgesStruct> VerticesWithUniqueCellNumber;
@@ -304,9 +346,14 @@ public:
 	static TMap<int32, TArray<FPairedVerticesWith3DInfo>>  CellWithEdgesArrays;
 	static TArray<FCellStruct> Cells;
 	//Make Triangles
-	static TArray<FVector> WholeVerticesInTexture;
+	static TArray<FVector> WholeVertices;
 	static TArray<int32> Triangles;
-	static TMap<FVector, int32> GlobalVertexIndexMap; 
+	static TMap<FVertexData, int32> GlobalVertexIndexMap;
+	static TArray<FVector2D> UV0;
+	static TArray<FVector2D> UV1;
+	static TArray<FVector2D> UV2;
+	static TArray<FVector> Normal;
+	static float UVScale;
 
 	//function to make texture 2d
 

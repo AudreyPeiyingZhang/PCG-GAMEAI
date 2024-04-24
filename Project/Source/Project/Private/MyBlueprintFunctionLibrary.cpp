@@ -2,9 +2,6 @@
 
 
 #include "MyBlueprintFunctionLibrary.h"
-
-#include <filesystem>
-
 #include "GameFramework/HUD.h"
 
 UTexture2D* UMyBlueprintFunctionLibrary::CreateTexture2D(int32 Width, int32 Height)
@@ -87,8 +84,6 @@ FVector UMyBlueprintFunctionLibrary::RandomVector1DtoVector3D(float RandomFloatN
 TArray<FVector2D> UMyBlueprintFunctionLibrary::VoronoiSeeds;
 TArray<FVector2D> UMyBlueprintFunctionLibrary::Vertices;
 TArray<FVector2D> UMyBlueprintFunctionLibrary::MergedVertices;
-TArray<TArray<float>> UMyBlueprintFunctionLibrary::DistField;
-TArray<TArray<float>> UMyBlueprintFunctionLibrary::GradientField;
 TArray<TArray<FVector2D>> UMyBlueprintFunctionLibrary::ClosestCellVoronoiSeedXY;
 TArray<FVerticesEdgesStruct> UMyBlueprintFunctionLibrary::VerticesWithUniqueCellNumber;
 TArray<FVerticesEdgesStruct> UMyBlueprintFunctionLibrary::MergedCornerVerticesEdges;
@@ -102,10 +97,14 @@ TArray<FVector> UMyBlueprintFunctionLibrary::SameCellVertices;
 TMap<int32, TArray<FVector>> UMyBlueprintFunctionLibrary::CellWithVerticesArrays;
 TMap<int32, TArray<FPairedVerticesWith3DInfo>> UMyBlueprintFunctionLibrary::CellWithEdgesArrays;
 TArray<FCellStruct> UMyBlueprintFunctionLibrary::Cells;
-TArray<FVector> UMyBlueprintFunctionLibrary::WholeVerticesInTexture;
+TArray<FVector> UMyBlueprintFunctionLibrary::WholeVertices;
 TArray<int32> UMyBlueprintFunctionLibrary::Triangles;
-TMap<FVector, int32> UMyBlueprintFunctionLibrary::GlobalVertexIndexMap; 
-
+TMap<FVertexData, int32> UMyBlueprintFunctionLibrary::GlobalVertexIndexMap;
+TArray<FVector2D> UMyBlueprintFunctionLibrary::UV0;
+TArray<FVector2D> UMyBlueprintFunctionLibrary::UV1;
+TArray<FVector2D> UMyBlueprintFunctionLibrary::UV2;
+TArray<FVector> UMyBlueprintFunctionLibrary::Normal;
+float UMyBlueprintFunctionLibrary::UVScale;
 
 void UMyBlueprintFunctionLibrary::InitializeClosestCellVoronoiSeedXY(UTexture2D* Texture2D)
 {
@@ -123,43 +122,6 @@ void UMyBlueprintFunctionLibrary::InitializeClosestCellVoronoiSeedXY(UTexture2D*
 		}
 	}
 }
-
-void UMyBlueprintFunctionLibrary::InitializeDistField(UTexture2D* Texture2D)
-{
-	//__int128 test;1<<ghfh|
-	const int32 Width = Texture2D -> GetSizeX();
-	const int32 Height = Texture2D -> GetSizeY();
-	DistField.SetNum(Width);
-	
-	for(int X = 0; X < Width; ++X)
-	{
-		DistField[X].SetNum(Height);
-		
-		for(int Y = 0; Y < Height; ++Y)
-		{
-			DistField[X][Y] = 1000.0f; 
-		}
-	}
-}
-
-
-void UMyBlueprintFunctionLibrary::InitializeGradientField(UTexture2D* Texture2D)
-{
-	const int32 Width = Texture2D -> GetSizeX();
-	const int32 Height = Texture2D -> GetSizeY();
-	GradientField.SetNum(Width);
-	
-	for(int X = 0; X < Width; ++X)
-	{
-		GradientField[X].SetNum(Height);
-		
-		for(int Y = 0; Y < Height; ++Y)
-		{
-			GradientField[X][Y] = 1000.0f; 
-		}
-	}
-}
-
 
 void UMyBlueprintFunctionLibrary::DrawVoronoiSeedsOnTexture2D(UTexture2D* Texture2D, FColor color)
 {
@@ -1074,6 +1036,10 @@ void UMyBlueprintFunctionLibrary::PrintCellsArray()
 	UE_LOG(LogTemp, Log, TEXT("Finished Printing Cells Array."));
 }
 
+
+
+
+
 float UMyBlueprintFunctionLibrary::CalculatePolygonArea(const TArray<FVector>& VerticesPos, EPlane Plane)
 {
 	float Area = 0.0f;
@@ -1097,18 +1063,18 @@ float UMyBlueprintFunctionLibrary::CalculatePolygonArea(const TArray<FVector>& V
 	return 0.5f * Area;
 }
 
-void UMyBlueprintFunctionLibrary::CheckWindingOrder(TArray<int32>&  VtxIndex, TArray<FVector>& VertexPositions, EPlane Plane)
+void UMyBlueprintFunctionLibrary::CheckWindingOrder(TArray<FVertexData>& VtxData,TArray<int32>& VtxIndex, EPlane Plane)
 {
 	TArray<FVector> VerticesForAreaCalc;
-	for (int Index : VtxIndex)
+	for (const FVertexData EachVtxData : VtxData)
 	{
-		VerticesForAreaCalc.Add(FindKeyByValue(GlobalVertexIndexMap, Index));
+		VerticesForAreaCalc.Add(EachVtxData.VtxPos);
 	}
-	float Area = CalculatePolygonArea(VerticesForAreaCalc,Plane);
+	const float Area = CalculatePolygonArea(VerticesForAreaCalc, Plane);
 	if (Area > 0)  
 	{
+		Algo::Reverse(VtxData);
 		Algo::Reverse(VtxIndex);
-		Algo::Reverse(VertexPositions);
 	}
 	
 }
@@ -1128,18 +1094,22 @@ void UMyBlueprintFunctionLibrary::MakeTriangle(TArray<int32> VtxIndex)
 }
 
 
-int32 UMyBlueprintFunctionLibrary::AddVertex(FVector VtxPos)
+int32 UMyBlueprintFunctionLibrary::AddVertex(FVertexData VertexData)
 {
-	VtxPos = RoundVector(VtxPos);
-	int32 VertexIndex = WholeVerticesInTexture.Num();
-	if (!GlobalVertexIndexMap.Contains(VtxPos))
+	
+	int32 VertexIndex = WholeVertices.Num();
+	if (!GlobalVertexIndexMap.Contains(VertexData))
 	{
-		GlobalVertexIndexMap.Add(VtxPos, VertexIndex);
-		WholeVerticesInTexture.Add(VtxPos);
+		GlobalVertexIndexMap.Add(VertexData, VertexIndex);
+		WholeVertices.Add(VertexData.VtxPos);
+		Normal.Add(VertexData.VtxNormal);
+		UV0.Add(VertexData.VtxUV0);
+		UV1.Add(VertexData.VtxUV1);
+		UV2.Add(VertexData.VtxUV2);
 	}
 	else
 	{
-		VertexIndex = GlobalVertexIndexMap[VtxPos];
+		VertexIndex = GlobalVertexIndexMap[VertexData];
 	}
 	return VertexIndex;
 }
@@ -1174,15 +1144,27 @@ void UMyBlueprintFunctionLibrary::ExtrudePolygon(TArray<int32> BaseTriangle, TAr
 	
 	ExtrudeTriangles.Empty();
 	
-	TArray<int32> NewVtxArray;
-	NewVtxArray.Empty();
+	TArray<int32> NewVtxIndexArray;
+	NewVtxIndexArray.Empty();
+	TArray<FVertexData> NewVtxDataArray;
+	NewVtxDataArray.Empty();
+	
 	for(int i =0; i<BaseTriangle.Num();i++)
 	{
-		FVector NewVtxPos = WholeVerticesInTexture[BaseTriangle[i]];
+		FVector NewVtxPos = WholeVertices[BaseTriangle[i]];
 		float Height = 20.0f;
 		NewVtxPos.Z += Height;
-		int32 NewVtxIndex = AddVertex(NewVtxPos);
-		NewVtxArray.Add(NewVtxIndex);
+		FVertexData NewVtxData;
+		NewVtxData.VtxPos = NewVtxPos;
+		NewVtxData.VtxNormal = FVector(0,0,1);
+		NewVtxData.VtxUV0 = FVector2D(i%2,0);
+		NewVtxData.VtxUV1 = FVector2D(NewVtxData.VtxPos.X/UVScale, NewVtxData.VtxPos.Y/UVScale);
+		//roof
+		NewVtxData.VtxUV2 = FVector2D(1,0);
+		
+		int32 NewVtxIndex = AddVertex(NewVtxData);
+		NewVtxIndexArray.Add(NewVtxIndex);
+		NewVtxDataArray.Add(NewVtxData);
 		
 	}
 
@@ -1195,8 +1177,8 @@ void UMyBlueprintFunctionLibrary::ExtrudePolygon(TArray<int32> BaseTriangle, TAr
 
 	TArray<int32> TwoTopVtx;
 	TwoTopVtx.Empty();
-	TwoTopVtx.Add(NewVtxArray[2]);
-	TwoTopVtx.Add(NewVtxArray[0]);
+	TwoTopVtx.Add(NewVtxIndexArray[2]);
+	TwoTopVtx.Add(NewVtxIndexArray[0]);
 
 	TArray<int32> FirstSideTriangle;
 	FirstSideTriangle.Empty();
@@ -1206,14 +1188,14 @@ void UMyBlueprintFunctionLibrary::ExtrudePolygon(TArray<int32> BaseTriangle, TAr
 	DivideQuadIntoTriangle(TwoBaseVtx, TwoTopVtx, FirstSideTriangle, SecondSideTriangle);
 
 	
-	ExtrudeTriangles.Append(NewVtxArray);
+	ExtrudeTriangles.Append(NewVtxIndexArray);
 	ExtrudeTriangles.Append(FirstSideTriangle);
 	ExtrudeTriangles.Append(SecondSideTriangle);
 
 	
 }
 
-void UMyBlueprintFunctionLibrary::TriangleFanSubdivide(TArray<int32> VtxIndex, TArray<FVector> VtxPos)
+void UMyBlueprintFunctionLibrary::TriangleFanSubdivide(TArray<int32> VtxIndex, TArray<FVertexData> VtxData)
 {
 	TArray<int32> TwoBase;
 	TwoBase.Empty();
@@ -1222,15 +1204,41 @@ void UMyBlueprintFunctionLibrary::TriangleFanSubdivide(TArray<int32> VtxIndex, T
 	TArray<int32> TwoMid;
 	TwoMid.Empty();
 
-	const FVector CenterPos = VtxPos[0];
-	const FVector FirstPos = VtxPos[1];
-	const FVector SecondPos = VtxPos[2];
-	
-	const FVector MidBetweenCenterAndFirst = (CenterPos + FirstPos)/2;
-	const FVector MidBetweenCenterAndSecond = (SecondPos + CenterPos)/2;
+	const FVector CenterPos = VtxData[0].VtxPos;
+	const FVector FirstPos = VtxData[1].VtxPos;
+	const FVector SecondPos = VtxData[2].VtxPos;
 
-	const int32 MidBetweenCenterAndFirstIndex = AddVertex(MidBetweenCenterAndFirst);
-	const int32 MidBetweenCenterAndSecondIndex = AddVertex(MidBetweenCenterAndSecond);
+	//mid first and center
+	FVertexData MidBetweenCenterAndFirstVtxData;
+	MidBetweenCenterAndFirstVtxData.VtxPos = (CenterPos + FirstPos)/2;
+	MidBetweenCenterAndFirstVtxData.VtxNormal = FVector(0,0,1);
+	FVector V0 = MidBetweenCenterAndFirstVtxData.VtxPos - FirstPos;
+	FVector V1 = SecondPos - FirstPos;
+	FVector NormalizedV1 = V1.GetSafeNormal();
+	float FirstProjectionLength = FVector::DotProduct(V0, NormalizedV1);
+	float FirstUVSpaceLength = FirstProjectionLength/V1.Length();
+
+	MidBetweenCenterAndFirstVtxData.VtxUV0  =FVector2D(1*FirstUVSpaceLength,1);
+	MidBetweenCenterAndFirstVtxData.VtxUV1 = FVector2D(MidBetweenCenterAndFirstVtxData.VtxPos.X/UVScale,MidBetweenCenterAndFirstVtxData.VtxPos.Y/UVScale);
+	//road
+	MidBetweenCenterAndFirstVtxData.VtxUV2 = FVector2D(0,0);
+	const int32 MidBetweenCenterAndFirstIndex = AddVertex(MidBetweenCenterAndFirstVtxData);
+
+	//mid second and center
+	FVertexData MidBetweenCenterAndSecondVtxData;
+	MidBetweenCenterAndSecondVtxData.VtxPos = (CenterPos + SecondPos)/2;
+	MidBetweenCenterAndSecondVtxData.VtxNormal = FVector(0,0,1);
+	FVector V2 = MidBetweenCenterAndSecondVtxData.VtxPos - SecondPos;
+	FVector V3  = FirstPos - SecondPos;
+	FVector NormalizedV3 = V3.GetSafeNormal();
+	float SecondProjectionLength = FVector::DotProduct(V2, NormalizedV3);
+	float SecondUVSpaceLength = SecondProjectionLength/V3.Length();
+	MidBetweenCenterAndSecondVtxData.VtxUV0 = FVector2D(1*SecondUVSpaceLength,1);
+	MidBetweenCenterAndSecondVtxData.VtxUV1 = FVector2D(MidBetweenCenterAndSecondVtxData.VtxPos.X/UVScale,MidBetweenCenterAndSecondVtxData.VtxPos.Y/UVScale);
+	//road
+	MidBetweenCenterAndSecondVtxData.VtxUV2 = FVector2D(0,0);
+	
+	const int32 MidBetweenCenterAndSecondIndex = AddVertex(MidBetweenCenterAndSecondVtxData);
 	
 
 	TwoBase.Add(VtxIndex[1]);
@@ -1303,58 +1311,87 @@ FVector UMyBlueprintFunctionLibrary::FindKeyByValue(const TMap<FVector, int32>& 
 
 void UMyBlueprintFunctionLibrary::CreateVoronoiShapePolygon(UProceduralMeshComponent* ProceduralMesh)
 {
-	WholeVerticesInTexture.Empty();
+	WholeVertices.Empty();
 	GlobalVertexIndexMap.Empty();
+	Triangles.Empty();
+	UV0.Empty();
+	UV1.Empty();
+	UV2.Empty();
+	Normal.Empty();
 
 	for(FCellStruct& CurrentCell : Cells)
 	{
-		TArray<int32> CellVertexIndices;
-		CellVertexIndices.Empty();
-		TArray<FVector> CellVertexPos;
-		CellVertexPos.Empty();
+		TArray<FVertexData> CellVerticesData;
+		CellVerticesData.Empty();
+		TArray<int32> CellVerticesIndex;
+		CellVerticesIndex.Empty();
+
 		//map index
-		for(const FVector& Vertex : CurrentCell.VerticesPosition)
+		for(int i =0;i<CurrentCell.VerticesPosition.Num(); i++)
 		{
-			int32 VertexIndex = AddVertex(Vertex);
-			CellVertexIndices.Add(VertexIndex);
-			CellVertexPos.Add(Vertex);
+			FVertexData CurrentVtxData;
+			CurrentVtxData.VtxPos = CurrentCell.VerticesPosition[i];
+			CurrentVtxData.VtxNormal = FVector(0,0,1);
+			CurrentVtxData.VtxUV0 = FVector2D(i%2,0);
+			CurrentVtxData.VtxUV1 = FVector2D(CurrentVtxData.VtxPos.X/UVScale, CurrentVtxData.VtxPos.Y/UVScale);
+			//road
+			CurrentVtxData.VtxUV2 = FVector2D(0, 0);
+			//index
+			int32 VertexIndex = AddVertex(CurrentVtxData);
+			CellVerticesData.Add(CurrentVtxData);
+			CellVerticesIndex.Add(VertexIndex);
 			
 		}
 
 		//get center point 
 		FVector CentroidPos = CurrentCell.CalculateCentroid();
-		const int32 CentroidIndex = AddVertex(CentroidPos);
+		//Add vertex struct
+		FVertexData CentroidVertexData;
+		CentroidVertexData.VtxPos = CentroidPos;
+		CentroidVertexData.VtxNormal = FVector(0,0,1);
+		CentroidVertexData.VtxUV0 = FVector2D(0.5,0);
+		CentroidVertexData.VtxUV1 = FVector2D(CentroidVertexData.VtxPos.X/UVScale,CentroidVertexData.VtxPos.Y/UVScale);
+		//road
+		CentroidVertexData.VtxUV2 = FVector2D(0, 0);
+		//
+		int32 CentroidIndex = AddVertex(CentroidVertexData);
 
-		CheckWindingOrder(CellVertexIndices, CellVertexPos, EPlane::XY); 
 		
-	
+		
+
+		//check winding order
+		CheckWindingOrder(CellVerticesData, CellVerticesIndex, EPlane::XY);
+		
 		
 		//for each triangle
-		for(int i =0;i<CellVertexIndices.Num();i++)
+		for(int i =0;i<CellVerticesData.Num();i++)
 		{
+			TArray<FVertexData> SingleTriangleData;
+			SingleTriangleData.Empty();
+			const FVertexData CenterVtxData = CentroidVertexData;
+			const FVertexData FirstVtxData = CellVerticesData[i];
+			const FVertexData NextVtxData = CellVerticesData[(i+1)%CellVerticesData.Num()];
+			SingleTriangleData.Add(CenterVtxData);
+			SingleTriangleData.Add(FirstVtxData);
+			SingleTriangleData.Add(NextVtxData);
+
 			TArray<int32> SingleTriangleIndex;
 			SingleTriangleIndex.Empty();
 			
-			TArray<FVector> SingleTrianglePos;
-			SingleTrianglePos.Empty();
-			
 			const int32 CenterIndex = CentroidIndex;
-			const int32 FirstVtxIndex = CellVertexIndices[i];
-			const int32 NextVtxIndex = CellVertexIndices[(i + 1) % CellVertexIndices.Num()];
-			SingleTriangleIndex.Add(CenterIndex);
+			const int32 FirstVtxIndex = CellVerticesIndex[i];
+			const int32 NextVtxIndex = CellVerticesIndex[(i + 1) % CellVerticesIndex.Num()];
+			SingleTriangleIndex.Add(CenterIndex); 
 			SingleTriangleIndex.Add(FirstVtxIndex);
 			SingleTriangleIndex.Add(NextVtxIndex);
 
-			SingleTrianglePos.Add(CentroidPos);
-			SingleTrianglePos.Add(CellVertexPos[i]);
-			SingleTrianglePos.Add(CellVertexPos[(i + 1) % CellVertexIndices.Num()]);
 
-			TriangleFanSubdivide(SingleTriangleIndex,SingleTrianglePos);
+			TriangleFanSubdivide(SingleTriangleIndex,SingleTriangleData);
 			
 		}
 	}
 
-	ProceduralMesh->CreateMeshSection(0, WholeVerticesInTexture, Triangles, TArray<FVector>(), TArray<FVector2D>(), TArray<FColor>(), TArray<FProcMeshTangent>(), true);
+	ProceduralMesh->CreateMeshSection(0, WholeVertices, Triangles, TArray<FVector>(), TArray<FVector2D>(), TArray<FColor>(), TArray<FProcMeshTangent>(), true);
 	
 }
 
