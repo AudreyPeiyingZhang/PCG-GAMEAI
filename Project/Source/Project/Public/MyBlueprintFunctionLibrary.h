@@ -197,25 +197,46 @@ struct FVertexData
 	GENERATED_BODY()
 
 public:
-	FVector VtxPos = FVector(0,0,0);
+	// Position
+	FVector VtxPos;
+	// Index
+	int32 VtxIndex;
+	// Local UV
+	FVector2D VtxUV0;
+	// World UV
+	FVector2D VtxUV1;
+	// Distinguish UV Channel
+	FVector2D VtxUV2;
+	// Normal
+	FVector VtxNormal;
 
-	//local uv
-	FVector2D VtxUV0  = FVector2D(0,0);
-	//world uv
-	FVector2D VtxUV1 = FVector2D(0,0);
-	//distinguish UV Channel
-	// Road (0,0)
-	// Wall (0.5,0)
-	// Roof (1,0)
-	FVector2D VtxUV2 = FVector2D(0,0);
-	
-	//normal
-	FVector VtxNormal = FVector(0,0,0);
+	// Default constructor with initializers
+	FVertexData()
+		: VtxPos(0.0f, 0.0f, 0.0f)
+		, VtxIndex(0)
+		, VtxUV0(0.0f, 0.0f)
+		, VtxUV1(0.0f, 0.0f)
+		, VtxUV2(0.0f, 0.0f)
+		, VtxNormal(0.0f, 0.0f, 0.0f)
+	{
+	}
 
+	// Parameterized constructor for custom initialization
+	FVertexData(const FVector& InVtxPos, int32 InVtxIndex, const FVector2D& InVtxUV0, const FVector2D& InVtxUV1, const FVector2D& InVtxUV2, const FVector& InVtxNormal)
+		: VtxPos(InVtxPos)
+		, VtxIndex(InVtxIndex)
+		, VtxUV0(InVtxUV0)
+		, VtxUV1(InVtxUV1)
+		, VtxUV2(InVtxUV2)
+		, VtxNormal(InVtxNormal)
+	{
+	}
 
+	// Equality operator to support comparison
 	friend bool operator==(const FVertexData& Lhs, const FVertexData& Rhs)
 	{
 		return Lhs.VtxPos == Rhs.VtxPos &&
+			   Lhs.VtxIndex == Rhs.VtxIndex &&
 			   Lhs.VtxUV0 == Rhs.VtxUV0 &&
 			   Lhs.VtxUV1 == Rhs.VtxUV1 &&
 			   Lhs.VtxUV2 == Rhs.VtxUV2 &&
@@ -224,17 +245,7 @@ public:
 	
 	
 };
-// 自定义散列函数
-FORCEINLINE uint32 GetTypeHash(const FVertexData& VertexData)
-{
-	uint32 Hash = 0;
-	Hash = HashCombine(Hash, GetTypeHash(VertexData.VtxPos));
-	Hash = HashCombine(Hash, GetTypeHash(VertexData.VtxUV0));
-	Hash = HashCombine(Hash, GetTypeHash(VertexData.VtxUV1));
-	Hash = HashCombine(Hash, GetTypeHash(VertexData.VtxUV2));
-	Hash = HashCombine(Hash, GetTypeHash(VertexData.VtxNormal));
-	return Hash;
-}
+
 
 
 UCLASS()
@@ -303,7 +314,7 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Polygons Calculation")
 	static void SortVerticesInCells();
 	UFUNCTION(BlueprintCallable, Category = "Polygons Calculation")
-	static void CreateVoronoiShapePolygon(UProceduralMeshComponent* ProceduralMesh);
+	static void CreateVoronoiShapePolygon(UProceduralMeshComponent* ProceduralMesh, UMaterialInterface* MaterialInstance);
 	UFUNCTION(BlueprintCallable, Category = "Polygons Calculation")
 	static void TriangleFanSubdivide(TArray<int32> VtxIndex,TArray<FVertexData> VtxData);
 	UFUNCTION(BlueprintCallable, Category = "Polygons Calculation")
@@ -311,7 +322,7 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Polygons Calculation")
 	static void DivideQuadIntoTriangle(TArray<int32> TwoBaseVerticesIndex, TArray<int32> TwoMiddleVerticesIndex, TArray<int32>& DownLeftTriangle, TArray<int32>& DownRightTriangle);
 	UFUNCTION(BlueprintCallable, Category = "Polygons Calculation")
-	static void CheckWindingOrder(TArray<FVertexData>& VtxData,TArray<int32>& VtxIndex, EPlane Plane = EPlane::XY);
+	static void CheckWindingOrder(TArray<FVertexData>& VtxData, EPlane Plane = EPlane::XY);
 	UFUNCTION(BlueprintCallable, Category = "Polygons Calculation")
 	static void MakeTriangle(TArray<int32> VtxIndex);
 	UFUNCTION(BlueprintCallable, Category = "Polygons Calculation")
@@ -321,13 +332,13 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Polygons Calculation")
 	static FVector RoundVector(FVector Vec, float Precision = 0.001f);
 	UFUNCTION(BlueprintCallable, Category = "Polygons Calculation")
-	static void ExtrudePolygon(TArray<int32> BaseTriangle, TArray<int32>& ExtrudeTriangles);
+	static void ExtrudePolygon(TArray<int32> BaseTriangle, TArray<FVertexData> BaseVtxData,TArray<int32>& ExtrudeTriangles);
 
 
 	
 
 	
-private:	
+public:	
 	static TArray<FVector2D> VoronoiSeeds;
 	static TArray<FVector2D> Vertices;
 	static TArray<FVector2D> MergedVertices;
@@ -348,7 +359,8 @@ private:
 	//Make Triangles
 	static TArray<FVector> WholeVertices;
 	static TArray<int32> Triangles;
-	static TMap<FVertexData, int32> GlobalVertexIndexMap;
+	static TArray<int32> WholeVerticesIndex;
+	//static TMap<FVertexData, int32> GlobalVertexIndexMap;
 	static TArray<FVector2D> UV0;
 	static TArray<FVector2D> UV1;
 	static TArray<FVector2D> UV2;

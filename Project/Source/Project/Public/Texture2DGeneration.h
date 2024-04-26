@@ -34,7 +34,8 @@ protected:
 	UMaterialInterface* MaterialInterface;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Polygons")
 	UProceduralMeshComponent* ProceduralMesh;
-
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Polygons")
+	UMaterialInterface* CityMaterialInterface;
 
 
 	

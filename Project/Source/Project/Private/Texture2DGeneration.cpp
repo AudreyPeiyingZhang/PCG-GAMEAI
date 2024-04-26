@@ -16,7 +16,7 @@ ATexture2DGeneration::ATexture2DGeneration()
 	MaterialInterface = CreateDefaultSubobject<UMaterialInterface>("MaterialInterface");
 	//poly
 	ProceduralMesh = CreateDefaultSubobject<UProceduralMeshComponent>("ProceduralMeshComponent");
-
+	CityMaterialInterface = CreateDefaultSubobject<UMaterialInterface>("CityMaterialInterface");
 	
 	
 	
@@ -43,6 +43,7 @@ void ATexture2DGeneration::BeginPlay()
 	UMyBlueprintFunctionLibrary::ClearTexture2D(pTexture, FColor::White);
 	//draw any (x,y) on texture2d pixel
 	//UMyBlueprintFunctionLibrary::SetTexture2DPixels(Texture2D, 20, 20, FColor::Red);
+	UMyBlueprintFunctionLibrary::InitializeClosestCellVoronoiSeedXY(pTexture);
 	UMyBlueprintFunctionLibrary::VoronoiCalculation(pTexture,CellCount);
 	UMyBlueprintFunctionLibrary::DrawVoronoiSeedsOnTexture2D(pTexture, FColor::Black);
 	UMyBlueprintFunctionLibrary::CalculateVertices(pTexture);
@@ -64,7 +65,7 @@ void ATexture2DGeneration::BeginPlay()
 	UMyBlueprintFunctionLibrary::AssignEachCellStruct();
 	UMyBlueprintFunctionLibrary::SortVerticesInCells();
 	UMyBlueprintFunctionLibrary::PrintCellsArray();
-	UMyBlueprintFunctionLibrary::CreateVoronoiShapePolygon(ProceduralMesh);
+	UMyBlueprintFunctionLibrary::CreateVoronoiShapePolygon(ProceduralMesh, CityMaterialInterface);
 	
 	
 }
