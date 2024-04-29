@@ -36,8 +36,14 @@ protected:
 	UProceduralMeshComponent* ProceduralMesh;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Polygons")
 	UMaterialInterface* CityMaterialInterface;
-
-
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Building")
+	float MaxHeight = 50.0f;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Building")
+	FVector2D CenterPos = FVector2D(100,100);
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Building")
+	float SigmaX = 45.0f;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Building")
+	float SigmaY = 45.0f;
 	
 
 };

@@ -105,7 +105,12 @@ TArray<FVector2D> UMyBlueprintFunctionLibrary::UV0;
 TArray<FVector2D> UMyBlueprintFunctionLibrary::UV1;
 TArray<FVector2D> UMyBlueprintFunctionLibrary::UV2;
 TArray<FVector> UMyBlueprintFunctionLibrary::Normal;
-float UMyBlueprintFunctionLibrary::UVScale;
+float UMyBlueprintFunctionLibrary::UVScale = 1.0f;
+//normal
+float UMyBlueprintFunctionLibrary::MaxHeight;
+FVector2D UMyBlueprintFunctionLibrary::CityCenterPos;
+float UMyBlueprintFunctionLibrary::SigmaX;
+float UMyBlueprintFunctionLibrary::SigmaY;
 
 void UMyBlueprintFunctionLibrary::InitializeClosestCellVoronoiSeedXY(UTexture2D* Texture2D)
 {
@@ -1038,7 +1043,29 @@ void UMyBlueprintFunctionLibrary::PrintCellsArray()
 }
 
 
+//////////////////////////////////////////////below is for poly calculation
 
+void UMyBlueprintFunctionLibrary::GetCityCenterHeightSigma(float maxHeight, FVector2D centerPos, float sigmaX,
+	float sigmaY)
+{
+	MaxHeight = maxHeight;
+	CityCenterPos = centerPos;
+	SigmaX = sigmaX;
+	SigmaY = sigmaY;
+	
+	
+}
+
+float UMyBlueprintFunctionLibrary::UseNormalDistributionToGetBuildingHeight(FVector2D CurrentPos)
+{
+	const float exponent = FMath::Exp(-(FMath::Square(CurrentPos.X - CityCenterPos.X) / (2 * SigmaX * SigmaX) 
+							+ FMath::Square(CurrentPos.Y - CityCenterPos.Y) / (2 * SigmaY * SigmaY)));
+	UE_LOG(LogTemp, Warning, TEXT("exponent: %f"), exponent);
+
+	return MaxHeight * exponent;
+	
+	
+}
 
 
 float UMyBlueprintFunctionLibrary::CalculatePolygonArea(const TArray<FVector>& VerticesPos, EPlane Plane)
@@ -1144,12 +1171,16 @@ void UMyBlueprintFunctionLibrary::ExtrudePolygon(TArray<int32> BaseTriangle, TAr
 	NewVtxIndexArray.Empty();
 	TArray<FVertexData> NewVtxDataArray;
 	NewVtxDataArray.Empty();
+	//setup building height
+	FVector2D BuildingCenter = FVector2D(BaseVtxData[0].VtxPos.X,BaseVtxData[0].VtxPos.Y);
+	float BuildingHeight = UseNormalDistributionToGetBuildingHeight(BuildingCenter);
+
 	
 	for(int i =0; i<BaseVtxData.Num();i++)
 	{
 		FVector TopNewVtxPos = BaseVtxData[i].VtxPos;
-		float Height = 20.0f;
-		TopNewVtxPos.Z += Height;
+		//float Height = 20.0f;
+		TopNewVtxPos.Z += BuildingHeight;
 		FVector NewVtxNormal = FVector(0,0,1);
 		FVector2D NewVtxUV0 = FVector2D(0,0);
 		FVector2D NewVtxUV1 = FVector2D(TopNewVtxPos.X/UVScale, TopNewVtxPos.Y/UVScale);
@@ -1368,6 +1399,8 @@ void UMyBlueprintFunctionLibrary::CreateVoronoiShapePolygon(UProceduralMeshCompo
 	UV1.Empty();
 	UV2.Empty();
 	Normal.Empty();
+
+	
 
 	for(FCellStruct& CurrentCell : Cells)
 	{

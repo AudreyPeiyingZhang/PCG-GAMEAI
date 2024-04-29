@@ -333,6 +333,10 @@ public:
 	static FVector RoundVector(FVector Vec, float Precision = 0.001f);
 	UFUNCTION(BlueprintCallable, Category = "Polygons Calculation")
 	static void ExtrudePolygon(TArray<int32> BaseTriangle, TArray<FVertexData> BaseVtxData,TArray<int32>& ExtrudeTriangles);
+	UFUNCTION(BlueprintCallable, Category = "Normal Distribution")
+	static void GetCityCenterHeightSigma( float maxHeight, FVector2D centerPos, float sigmaX, float sigmaY);
+	UFUNCTION(BlueprintCallable, Category = "Normal Distribution")
+	static float UseNormalDistributionToGetBuildingHeight(FVector2D CurrentPos);
 
 
 	
@@ -366,6 +370,11 @@ public:
 	static TArray<FVector2D> UV2;
 	static TArray<FVector> Normal;
 	static float UVScale;
+	//normal distribution
+	static float MaxHeight;
+	static FVector2D CityCenterPos;
+	static float SigmaX;
+	static float SigmaY;
 
 	//function to make texture 2d
 

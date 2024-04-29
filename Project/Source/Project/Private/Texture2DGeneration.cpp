@@ -23,6 +23,7 @@ ATexture2DGeneration::ATexture2DGeneration()
 	
 	
 	
+	
 }
 
 // Called when the game starts or when spawned
@@ -65,6 +66,9 @@ void ATexture2DGeneration::BeginPlay()
 	UMyBlueprintFunctionLibrary::AssignEachCellStruct();
 	UMyBlueprintFunctionLibrary::SortVerticesInCells();
 	UMyBlueprintFunctionLibrary::PrintCellsArray();
+	//normal distribution
+	UMyBlueprintFunctionLibrary::GetCityCenterHeightSigma(MaxHeight, CenterPos, SigmaX,
+	SigmaY);
 	UMyBlueprintFunctionLibrary::CreateVoronoiShapePolygon(ProceduralMesh, CityMaterialInterface);
 	
 	
