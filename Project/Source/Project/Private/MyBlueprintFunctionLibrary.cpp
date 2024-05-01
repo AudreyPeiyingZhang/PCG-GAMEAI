@@ -56,13 +56,26 @@ float UMyBlueprintFunctionLibrary::RandomVector2DtoVector1D (FVector2D Vector2D,
 	
 }
 
+void UMyBlueprintFunctionLibrary::SetVoronoiSeed(FVector2D vectorSeedA, float aOffset, float aAmplitude, FVector2D vectorSeedB,
+	float bOffset, float bAmplitude)
+{
+	VectorASeed = vectorSeedA;
+	AOffset = aOffset;
+	AAmplitude = aAmplitude;
+	VectorBSeed = vectorSeedB;
+	BOffset = bOffset;
+	BAmplitude = bAmplitude;
+}
+
 FVector2D UMyBlueprintFunctionLibrary::RandomVector2DtoVector2D(FVector2D Vector2D)
 {
-	Vector2D.X = RandomVector2DtoVector1D(Vector2D, FVector2D(3.453, 2.983), 5.4, 12.12);
-	Vector2D.Y = RandomVector2DtoVector1D(Vector2D, FVector2D(5.932, 7.652), -5.8, 4.56);
+	Vector2D.X = RandomVector2DtoVector1D(Vector2D, VectorASeed, AOffset, AAmplitude);
+	Vector2D.Y = RandomVector2DtoVector1D(Vector2D, VectorBSeed, BOffset, BAmplitude);
 	return Vector2D;
 	
 }
+
+
 
 float UMyBlueprintFunctionLibrary::RandomVector1DtoVector1D(float RandomFloatNumber, float a,float b)
 {
@@ -111,6 +124,13 @@ float UMyBlueprintFunctionLibrary::MaxHeight;
 FVector2D UMyBlueprintFunctionLibrary::CityCenterPos;
 float UMyBlueprintFunctionLibrary::SigmaX;
 float UMyBlueprintFunctionLibrary::SigmaY;
+//UI
+FVector2D UMyBlueprintFunctionLibrary::VectorASeed;
+float UMyBlueprintFunctionLibrary::AOffset;
+float UMyBlueprintFunctionLibrary::AAmplitude;
+FVector2D UMyBlueprintFunctionLibrary::VectorBSeed;
+float UMyBlueprintFunctionLibrary::BOffset;
+float UMyBlueprintFunctionLibrary::BAmplitude;
 
 void UMyBlueprintFunctionLibrary::InitializeClosestCellVoronoiSeedXY(UTexture2D* Texture2D)
 {
@@ -164,8 +184,8 @@ void UMyBlueprintFunctionLibrary::VoronoiCalculation(UTexture2D* Texture2D, floa
 	FByteBulkData* RawImageDataOut = &Texture2D->GetPlatformData()->Mips[0].BulkData;
 	FColor* FormatedImageDataOut = static_cast<FColor*>(RawImageDataOut->Lock(LOCK_READ_WRITE));
 
-	const int32 PixelsInEachCellX = Width/CellCount;
-	const int32 PixelsInEachCellY = Height/CellCount;
+	const int32 PixelsInEachCellX = Width/10;
+	const int32 PixelsInEachCellY = Height/10;
 
 	
 	
@@ -183,7 +203,7 @@ void UMyBlueprintFunctionLibrary::VoronoiCalculation(UTexture2D* Texture2D, floa
 				for (int j = -1; j <=1; j++)
 				{
 					const FVector2D CurrentCellXY = FVector2D(CellXY.X + i, CellXY.Y +j);
-					if(CurrentCellXY.X < 0 || CurrentCellXY.Y < 0 || CurrentCellXY.X >=CellCount || CurrentCellXY.Y >=CellCount) continue;
+					if(CurrentCellXY.X < 0 || CurrentCellXY.Y < 0 || CurrentCellXY.X >=10 || CurrentCellXY.Y >=10) continue;
 					const FVector2D CurrentCellPixelXY = FVector2D(PixelsInEachCellX* CurrentCellXY.X,PixelsInEachCellY* CurrentCellXY.Y);
 					const int32 RandomX = FMath::Floor(FMath::Lerp(0, PixelsInEachCellX, RandomVector2DtoVector2D(CurrentCellPixelXY).X));
 					const int32 RandomY = FMath::Floor(FMath::Lerp(0, PixelsInEachCellY, RandomVector2DtoVector2D(CurrentCellPixelXY).Y));
@@ -540,7 +560,7 @@ void UMyBlueprintFunctionLibrary::Merge4CellCountVertices()
 		{
 			for(int32 j = 0; j<MergedCornerVerticesEdges.Num(); j++)
 			{
-				if(j!=i && CurrentVertex.IsContainMoreThan3Element(MergedCornerVerticesEdges[j]))
+				if(j!=i && CurrentVertex.IsContainOtherArray(MergedCornerVerticesEdges[j]))
 				{
 					isVertexClustered[j] = true;
 				}
@@ -619,7 +639,7 @@ void UMyBlueprintFunctionLibrary::DrawVertexPositionsAndCellNumbersOnHUD(AHUD* H
 	
 
 	
-	for (const FVerticesEdgesStruct& Element : Merged4CellCountVerticesEdges)
+	for (const FVerticesEdgesStruct& Element : VerticesWithUniqueCellNumber)
 	{
 		FVector2D ScreenSpace;
 
@@ -663,7 +683,7 @@ void UMyBlueprintFunctionLibrary::GroupVerticesWithSharedCells(UTexture2D* Textu
 			
 			
 		
-			if(SharedCellNumber==2)
+			if(SharedCellNumber>=2)
 			{
 				FPairedVertices CurrentPairedVertices (CurrentVertex.VertexPosition, Merged4CellCountVerticesEdges[j].VertexPosition);
 				bool bIsNewPairUnique = true;
@@ -918,9 +938,7 @@ void UMyBlueprintFunctionLibrary::GroupEdgesInCells()
 				   Edge.SecondVertexPosition.X, Edge.SecondVertexPosition.Y, Edge.SecondVertexPosition.Z);
 		}
 	}
-	
 
-	
 }
 
 void UMyBlueprintFunctionLibrary::AssignEachCellStruct()
@@ -1045,7 +1063,7 @@ void UMyBlueprintFunctionLibrary::PrintCellsArray()
 
 //////////////////////////////////////////////below is for poly calculation
 
-void UMyBlueprintFunctionLibrary::GetCityCenterHeightSigma(float maxHeight, FVector2D centerPos, float sigmaX,
+void UMyBlueprintFunctionLibrary::SetCityCenterHeightSigma(float maxHeight, FVector2D centerPos, float sigmaX,
 	float sigmaY)
 {
 	MaxHeight = maxHeight;

@@ -17,9 +17,9 @@ ATexture2DGeneration::ATexture2DGeneration()
 	//poly
 	ProceduralMesh = CreateDefaultSubobject<UProceduralMeshComponent>("ProceduralMeshComponent");
 	CityMaterialInterface = CreateDefaultSubobject<UMaterialInterface>("CityMaterialInterface");
-	
-	
-	
+
+	SetRootComponent(ProceduralMesh);
+
 	
 	
 	
@@ -30,9 +30,12 @@ ATexture2DGeneration::ATexture2DGeneration()
 void ATexture2DGeneration::BeginPlay()
 {
 	Super::BeginPlay();
-	constexpr int CellCount = 10;
+
+	Plane->SetWorldLocation(FVector(100.0f,100.0f,-10.0f));
 	
 
+	
+	
 	//create texture2d
 	pTexture = UMyBlueprintFunctionLibrary::CreateTexture2D(200,200);
 	//set texture to material
@@ -44,6 +47,8 @@ void ATexture2DGeneration::BeginPlay()
 	UMyBlueprintFunctionLibrary::ClearTexture2D(pTexture, FColor::White);
 	//draw any (x,y) on texture2d pixel
 	//UMyBlueprintFunctionLibrary::SetTexture2DPixels(Texture2D, 20, 20, FColor::Red);
+	//
+	UMyBlueprintFunctionLibrary::SetVoronoiSeed(VectorSeedA, AOffset, AAmplitude, VectorSeedB, BOffset, BAmplitude);
 	UMyBlueprintFunctionLibrary::InitializeClosestCellVoronoiSeedXY(pTexture);
 	UMyBlueprintFunctionLibrary::VoronoiCalculation(pTexture,CellCount);
 	UMyBlueprintFunctionLibrary::DrawVoronoiSeedsOnTexture2D(pTexture, FColor::Black);
@@ -67,9 +72,9 @@ void ATexture2DGeneration::BeginPlay()
 	UMyBlueprintFunctionLibrary::SortVerticesInCells();
 	UMyBlueprintFunctionLibrary::PrintCellsArray();
 	//normal distribution
-	UMyBlueprintFunctionLibrary::GetCityCenterHeightSigma(MaxHeight, CenterPos, SigmaX,
+	UMyBlueprintFunctionLibrary::SetCityCenterHeightSigma(MaxHeight, CenterPos, SigmaX,
 	SigmaY);
-	UMyBlueprintFunctionLibrary::CreateVoronoiShapePolygon(ProceduralMesh, CityMaterialInterface);
+	//UMyBlueprintFunctionLibrary::CreateVoronoiShapePolygon(ProceduralMesh, CityMaterialInterface);
 	
 	
 }

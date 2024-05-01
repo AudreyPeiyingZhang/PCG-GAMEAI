@@ -31,28 +31,25 @@ public:
 	FVector2D VertexPosition;
 	TSet<int32> CurrentCellsUniqueNumbers;
 
-	bool IsContainMoreThan3Element( const FVerticesEdgesStruct Other) const
+	bool IsContainOtherArray( const FVerticesEdgesStruct Other) const
 	{
-
-		int Count = 0;
-		for (const int32 Element : CurrentCellsUniqueNumbers)
-		{
-			if (Other.CurrentCellsUniqueNumbers.Contains(Element))
-			{
-				Count++;
-				
-				
-			}
-		}
 
 		
 
-		if(Count>=3)
+		
+
+		
+		for (const int32& Element : Other.CurrentCellsUniqueNumbers)
 		{
-			return true;
+			if (!CurrentCellsUniqueNumbers.Contains(Element)) 
+			{
+				return false;
+			}
 		}
 
-		return false;
+		return true;
+
+
 	}
 
 	bool IsTwoEquivalent(const FVerticesEdgesStruct& Other) const
@@ -334,9 +331,13 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Polygons Calculation")
 	static void ExtrudePolygon(TArray<int32> BaseTriangle, TArray<FVertexData> BaseVtxData,TArray<int32>& ExtrudeTriangles);
 	UFUNCTION(BlueprintCallable, Category = "Normal Distribution")
-	static void GetCityCenterHeightSigma( float maxHeight, FVector2D centerPos, float sigmaX, float sigmaY);
+	static void SetCityCenterHeightSigma( float maxHeight, FVector2D centerPos, float sigmaX, float sigmaY);
 	UFUNCTION(BlueprintCallable, Category = "Normal Distribution")
 	static float UseNormalDistributionToGetBuildingHeight(FVector2D CurrentPos);
+
+	//UI
+	UFUNCTION(BlueprintCallable, Category = "Set UI")
+	static void SetVoronoiSeed(FVector2D vectorSeedA, float aOffset, float aAmplitude, FVector2D vectorSeedB, float bOffset, float bAmplitude );
 
 
 	
@@ -375,6 +376,14 @@ public:
 	static FVector2D CityCenterPos;
 	static float SigmaX;
 	static float SigmaY;
+
+	//UI
+	static FVector2D VectorASeed;
+	static float AOffset;
+	static float AAmplitude;
+	static FVector2D VectorBSeed;
+	static float BOffset;
+	static float BAmplitude;
 
 	//function to make texture 2d
 
