@@ -49,8 +49,10 @@ void ATexture2DGeneration::BeginPlay()
 	//UMyBlueprintFunctionLibrary::SetTexture2DPixels(Texture2D, 20, 20, FColor::Red);
 	//
 	UMyBlueprintFunctionLibrary::SetVoronoiSeed(VectorSeedA, AOffset, AAmplitude, VectorSeedB, BOffset, BAmplitude);
+	UMyBlueprintFunctionLibrary::SetCellCount(CellCount);
+	
 	UMyBlueprintFunctionLibrary::InitializeClosestCellVoronoiSeedXY(pTexture);
-	UMyBlueprintFunctionLibrary::VoronoiCalculation(pTexture,CellCount);
+	UMyBlueprintFunctionLibrary::VoronoiCalculation(pTexture);
 	UMyBlueprintFunctionLibrary::DrawVoronoiSeedsOnTexture2D(pTexture, FColor::Black);
 	UMyBlueprintFunctionLibrary::CalculateVertices(pTexture);
 	UMyBlueprintFunctionLibrary::Add4VerticesOnWholeTextureCorner(pTexture);
@@ -74,7 +76,7 @@ void ATexture2DGeneration::BeginPlay()
 	//normal distribution
 	UMyBlueprintFunctionLibrary::SetCityCenterHeightSigma(MaxHeight, CenterPos, SigmaX,
 	SigmaY);
-	//UMyBlueprintFunctionLibrary::CreateVoronoiShapePolygon(ProceduralMesh, CityMaterialInterface);
+	UMyBlueprintFunctionLibrary::CreateVoronoiShapePolygon(ProceduralMesh, CityMaterialInterface);
 	
 	
 }

@@ -42,6 +42,21 @@ void UMyBlueprintFunctionLibrary::SetTexture2DPixels(UTexture2D* Texture2D, int3
 	Texture2D->UpdateResource();
 }
 
+void UMyBlueprintFunctionLibrary::SetVoronoiSeed(FVector2D vectorSeedA, float aOffset, float aAmplitude, FVector2D vectorSeedB,
+	float bOffset, float bAmplitude)
+{
+	VectorASeed = vectorSeedA;
+	AOffset = aOffset;
+	AAmplitude = aAmplitude;
+	VectorBSeed = vectorSeedB;
+	BOffset = bOffset;
+	BAmplitude = bAmplitude;
+}
+
+void UMyBlueprintFunctionLibrary::SetCellCount(int32 cellCount)
+{
+	CellCount = cellCount;
+}
 
 float UMyBlueprintFunctionLibrary::RandomVector2DtoVector1D (FVector2D Vector2D, FVector2D a, float b, float c)
 {
@@ -56,16 +71,7 @@ float UMyBlueprintFunctionLibrary::RandomVector2DtoVector1D (FVector2D Vector2D,
 	
 }
 
-void UMyBlueprintFunctionLibrary::SetVoronoiSeed(FVector2D vectorSeedA, float aOffset, float aAmplitude, FVector2D vectorSeedB,
-	float bOffset, float bAmplitude)
-{
-	VectorASeed = vectorSeedA;
-	AOffset = aOffset;
-	AAmplitude = aAmplitude;
-	VectorBSeed = vectorSeedB;
-	BOffset = bOffset;
-	BAmplitude = bAmplitude;
-}
+
 
 FVector2D UMyBlueprintFunctionLibrary::RandomVector2DtoVector2D(FVector2D Vector2D)
 {
@@ -131,6 +137,7 @@ float UMyBlueprintFunctionLibrary::AAmplitude;
 FVector2D UMyBlueprintFunctionLibrary::VectorBSeed;
 float UMyBlueprintFunctionLibrary::BOffset;
 float UMyBlueprintFunctionLibrary::BAmplitude;
+int32 UMyBlueprintFunctionLibrary::CellCount;
 
 void UMyBlueprintFunctionLibrary::InitializeClosestCellVoronoiSeedXY(UTexture2D* Texture2D)
 {
@@ -176,7 +183,7 @@ void UMyBlueprintFunctionLibrary::DrawVoronoiSeedsOnTexture2D(UTexture2D* Textur
 }
 
 
-void UMyBlueprintFunctionLibrary::VoronoiCalculation(UTexture2D* Texture2D, float CellCount)
+void UMyBlueprintFunctionLibrary::VoronoiCalculation(UTexture2D* Texture2D)
 {
 
 	const int32 Width = Texture2D->GetSizeX();
@@ -184,8 +191,8 @@ void UMyBlueprintFunctionLibrary::VoronoiCalculation(UTexture2D* Texture2D, floa
 	FByteBulkData* RawImageDataOut = &Texture2D->GetPlatformData()->Mips[0].BulkData;
 	FColor* FormatedImageDataOut = static_cast<FColor*>(RawImageDataOut->Lock(LOCK_READ_WRITE));
 
-	const int32 PixelsInEachCellX = Width/10;
-	const int32 PixelsInEachCellY = Height/10;
+	const int32 PixelsInEachCellX = Width/CellCount;
+	const int32 PixelsInEachCellY = Height/CellCount;
 
 	
 	
@@ -203,7 +210,7 @@ void UMyBlueprintFunctionLibrary::VoronoiCalculation(UTexture2D* Texture2D, floa
 				for (int j = -1; j <=1; j++)
 				{
 					const FVector2D CurrentCellXY = FVector2D(CellXY.X + i, CellXY.Y +j);
-					if(CurrentCellXY.X < 0 || CurrentCellXY.Y < 0 || CurrentCellXY.X >=10 || CurrentCellXY.Y >=10) continue;
+					if(CurrentCellXY.X < 0 || CurrentCellXY.Y < 0 || CurrentCellXY.X >=CellCount || CurrentCellXY.Y >=CellCount) continue;
 					const FVector2D CurrentCellPixelXY = FVector2D(PixelsInEachCellX* CurrentCellXY.X,PixelsInEachCellY* CurrentCellXY.Y);
 					const int32 RandomX = FMath::Floor(FMath::Lerp(0, PixelsInEachCellX, RandomVector2DtoVector2D(CurrentCellPixelXY).X));
 					const int32 RandomY = FMath::Floor(FMath::Lerp(0, PixelsInEachCellY, RandomVector2DtoVector2D(CurrentCellPixelXY).Y));
@@ -563,6 +570,7 @@ void UMyBlueprintFunctionLibrary::Merge4CellCountVertices()
 				if(j!=i && CurrentVertex.IsContainOtherArray(MergedCornerVerticesEdges[j]))
 				{
 					isVertexClustered[j] = true;
+					
 				}
 			}
 		}
@@ -576,10 +584,42 @@ void UMyBlueprintFunctionLibrary::Merge4CellCountVertices()
 		}
 	}
 	
+	MergeSpecialCaseWithFourOrMoreVertices(Merged4CellCountVerticesEdges);
+	
 	UE_LOG(LogTemp, Warning, TEXT("Total vertices merged: %d"), Merged4CellCountVerticesEdges.Num());
 }
 
+void UMyBlueprintFunctionLibrary::MergeSpecialCaseWithFourOrMoreVertices(TArray<FVerticesEdgesStruct>& Array)
+{
 
+	for (int32 i = 0; i < Array.Num(); i++)
+	{
+		FVerticesEdgesStruct CurrentVertex = Array[i];
+		if(CurrentVertex.CurrentCellsUniqueNumbers.Num() >= 4)
+		{
+			for(int32 j = 0; j<Array.Num(); j++)
+			{
+				if(j!=i && CurrentVertex.IsContainMoreThan3Element(Array[j]))
+				{
+					TSet<int32> CombinedCellNum;
+					CombinedCellNum.Empty();
+					CombinedCellNum.Append(CurrentVertex.CurrentCellsUniqueNumbers);
+					CombinedCellNum.Append(Array[j].CurrentCellsUniqueNumbers);
+					Array[i].CurrentCellsUniqueNumbers.Empty();
+					for(int32 Element : CombinedCellNum)
+					{
+						Array[i].CurrentCellsUniqueNumbers.Add(Element);
+					}
+					
+					Array.RemoveAt(j);
+					
+					
+				}
+			}
+		}
+	
+	}
+}
 
 
 void UMyBlueprintFunctionLibrary::DrawMergedVerticesOnTexture2D(UTexture2D* Texture2D, FColor color)
@@ -639,7 +679,7 @@ void UMyBlueprintFunctionLibrary::DrawVertexPositionsAndCellNumbersOnHUD(AHUD* H
 	
 
 	
-	for (const FVerticesEdgesStruct& Element : VerticesWithUniqueCellNumber)
+	for (const FVerticesEdgesStruct& Element : MergedCornerVerticesEdges)
 	{
 		FVector2D ScreenSpace;
 

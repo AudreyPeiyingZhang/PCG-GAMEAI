@@ -34,11 +34,6 @@ public:
 	bool IsContainOtherArray( const FVerticesEdgesStruct Other) const
 	{
 
-		
-
-		
-
-		
 		for (const int32& Element : Other.CurrentCellsUniqueNumbers)
 		{
 			if (!CurrentCellsUniqueNumbers.Contains(Element)) 
@@ -68,6 +63,30 @@ public:
 		}
 
 		return true;
+	}
+
+	bool IsContainMoreThan3Element( const FVerticesEdgesStruct Other) const
+	{
+
+		int Count = 0;
+		for (const int32 Element : CurrentCellsUniqueNumbers)
+		{
+			if (Other.CurrentCellsUniqueNumbers.Contains(Element))
+			{
+				Count++;
+				
+				
+			}
+		}
+
+		
+
+		if(Count>=3)
+		{
+			return true;
+		}
+
+		return false;
 	}
 
 	bool IsWholeTextureEdge(int32 Width, int32 Height) const
@@ -269,7 +288,7 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Voronoi Calculation")
 	static void DrawVoronoiSeedsOnTexture2D(UTexture2D* Texture2D, FColor color);
 	UFUNCTION(BlueprintCallable, Category = "Voronoi Calculation")
-	static void VoronoiCalculation (UTexture2D* Texture2D, float CellCount);
+	static void VoronoiCalculation (UTexture2D* Texture2D);
 	UFUNCTION(BlueprintCallable, Category = "Vertices Calculation")
 	static void CalculateVertices(UTexture2D* Texture2D);
 	UFUNCTION(BlueprintCallable, Category = "Vertices Calculation")
@@ -282,6 +301,8 @@ public:
 	static void MergeSameCornerVertices();
 	UFUNCTION(BlueprintCallable, Category = "Vertices Calculation")
 	static void Merge4CellCountVertices();
+	UFUNCTION(BlueprintCallable, Category = "Vertices Calculation")
+	static void MergeSpecialCaseWithFourOrMoreVertices(TArray<FVerticesEdgesStruct>& Array);
 	UFUNCTION(BlueprintCallable, Category = "Vertices Calculation")
 	static void DrawMergedVerticesOnTexture2D(UTexture2D* Texture2D,FColor color);
 	UFUNCTION(BlueprintCallable, Category = "Vertices Calculation HUD")
@@ -335,9 +356,11 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Normal Distribution")
 	static float UseNormalDistributionToGetBuildingHeight(FVector2D CurrentPos);
 
-	//UI
-	UFUNCTION(BlueprintCallable, Category = "Set UI")
+	//set voronoi seed Parameter
+	UFUNCTION(BlueprintCallable, Category = "Set Voronoi Parameter")
 	static void SetVoronoiSeed(FVector2D vectorSeedA, float aOffset, float aAmplitude, FVector2D vectorSeedB, float bOffset, float bAmplitude );
+	UFUNCTION(BlueprintCallable, Category = "Set Voronoi Parameter")
+	static void SetCellCount(int32 cellCount);
 
 
 	
@@ -377,13 +400,16 @@ public:
 	static float SigmaX;
 	static float SigmaY;
 
-	//UI
+	//setvoronoi
 	static FVector2D VectorASeed;
 	static float AOffset;
 	static float AAmplitude;
 	static FVector2D VectorBSeed;
 	static float BOffset;
 	static float BAmplitude;
+
+	//set cell count
+	static int32 CellCount;
 
 	//function to make texture 2d
 
