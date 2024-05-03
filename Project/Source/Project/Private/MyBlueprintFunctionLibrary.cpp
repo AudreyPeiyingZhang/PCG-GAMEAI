@@ -159,6 +159,7 @@ void UMyBlueprintFunctionLibrary::InitializeClosestCellVoronoiSeedXY(UTexture2D*
 void UMyBlueprintFunctionLibrary::DrawVoronoiSeedsOnTexture2D(UTexture2D* Texture2D, FColor color)
 {
 
+	
 	const int32 Width = Texture2D->GetSizeX();
 	const int32 Height = Texture2D->GetSizeY();
 	FByteBulkData* RawImageDataOut = &Texture2D->GetPlatformData()->Mips[0].BulkData;
@@ -185,7 +186,7 @@ void UMyBlueprintFunctionLibrary::DrawVoronoiSeedsOnTexture2D(UTexture2D* Textur
 
 void UMyBlueprintFunctionLibrary::VoronoiCalculation(UTexture2D* Texture2D)
 {
-
+	InitializeClosestCellVoronoiSeedXY(Texture2D);
 	const int32 Width = Texture2D->GetSizeX();
 	const int32 Height = Texture2D->GetSizeY();
 	FByteBulkData* RawImageDataOut = &Texture2D->GetPlatformData()->Mips[0].BulkData;
@@ -270,6 +271,7 @@ void UMyBlueprintFunctionLibrary::CalculateVertices(UTexture2D* Texture2D)
 {
 	const int32 Width = Texture2D->GetSizeX();
 	const int32 Height = Texture2D->GetSizeY();
+	Vertices.Empty();
 
 	for(int X=1; X<Width-1; X++)
 	{
@@ -355,6 +357,8 @@ void UMyBlueprintFunctionLibrary::AssignCellNumbers(UTexture2D* Texture2D)
 
 	int32 CellNumber = 0;
 	int32 SpecialCellNumber = 10000;
+
+	VerticesWithUniqueCellNumber.Empty();
 
 
 	for (int v = 0; v < Vertices.Num(); v++)
@@ -495,6 +499,7 @@ void UMyBlueprintFunctionLibrary::MergeSameCornerVertices()
 {
 	TArray<bool> isVertexClustered;
 	isVertexClustered.Init(false, VerticesWithUniqueCellNumber.Num());
+	MergedCornerVerticesEdges.Empty();
 	
 	for (int i = 0; i < VerticesWithUniqueCellNumber.Num(); i++)
 	{
@@ -559,7 +564,8 @@ void UMyBlueprintFunctionLibrary::Merge4CellCountVertices()
 {
 	TArray<bool> isVertexClustered;
 	isVertexClustered.Init(false, MergedCornerVerticesEdges.Num());
-
+	
+	
 	for (int32 i = 0; i < MergedCornerVerticesEdges.Num(); i++)
 	{
 		FVerticesEdgesStruct CurrentVertex = MergedCornerVerticesEdges[i];

@@ -51,7 +51,7 @@ void ATexture2DGeneration::BeginPlay()
 	UMyBlueprintFunctionLibrary::SetVoronoiSeed(VectorSeedA, AOffset, AAmplitude, VectorSeedB, BOffset, BAmplitude);
 	UMyBlueprintFunctionLibrary::SetCellCount(CellCount);
 	
-	UMyBlueprintFunctionLibrary::InitializeClosestCellVoronoiSeedXY(pTexture);
+	//UMyBlueprintFunctionLibrary::InitializeClosestCellVoronoiSeedXY(pTexture);
 	UMyBlueprintFunctionLibrary::VoronoiCalculation(pTexture);
 	UMyBlueprintFunctionLibrary::DrawVoronoiSeedsOnTexture2D(pTexture, FColor::Black);
 	UMyBlueprintFunctionLibrary::CalculateVertices(pTexture);
@@ -64,7 +64,7 @@ void ATexture2DGeneration::BeginPlay()
 	UMyBlueprintFunctionLibrary::PrintVertexPosAndUniqueCellNumber();
 	UMyBlueprintFunctionLibrary::GroupVerticesWithSharedCells(pTexture);
 	UMyBlueprintFunctionLibrary::PrintPairedVertices();
-	UMyBlueprintFunctionLibrary::DrawDebugEdges(GetWorld());
+	//UMyBlueprintFunctionLibrary::DrawDebugEdges(GetWorld());
 	//functions below is to create polygons
 	UMyBlueprintFunctionLibrary::ProcessVerticesForPolyCalculation(pTexture);
 	UMyBlueprintFunctionLibrary::AssignVertexUniqueIndex();

@@ -45,17 +45,17 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Building")
 	float SigmaY = 45.0f;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "VoronoiSeed")
-	FVector2D VectorSeedA = FVector2D(37.02, 27.32);
+	FVector2D VectorSeedA = FVector2D(29.03, 90.32);
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "VoronoiSeed")
-	float AOffset = 10.23;
+	float AOffset = 8.23;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "VoronoiSeed")
-	float AAmplitude = 34.44;
+	float AAmplitude = 23.44;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "VoronoiSeed")
-	FVector2D VectorSeedB = FVector2D(2.82, 7.39);
+	FVector2D VectorSeedB = FVector2D(9.12, 2.39);
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "VoronoiSeed")
-	float BOffset= 9.01;
+	float BOffset= 10.01;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "VoronoiSeed")
-	float BAmplitude = 10.9;
+	float BAmplitude = 4.9;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "VoronoiScale")
 	int CellCount = 20;
 
