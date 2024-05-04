@@ -352,15 +352,19 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Polygons Calculation")
 	static void ExtrudePolygon(TArray<int32> BaseTriangle, TArray<FVertexData> BaseVtxData,TArray<int32>& ExtrudeTriangles);
 	UFUNCTION(BlueprintCallable, Category = "Normal Distribution")
-	static void SetCityCenterHeightSigma( float maxHeight, FVector2D centerPos, float sigmaX, float sigmaY);
-	UFUNCTION(BlueprintCallable, Category = "Normal Distribution")
 	static float UseNormalDistributionToGetBuildingHeight(FVector2D CurrentPos);
 
 	//set voronoi seed Parameter
+	UFUNCTION(BlueprintCallable, Category = "Normal Distribution")
+	static void SetCityCenterHeightSigma( float maxHeight, FVector2D centerPos, float sigmaX, float sigmaY);
 	UFUNCTION(BlueprintCallable, Category = "Set Voronoi Parameter")
 	static void SetVoronoiSeed(FVector2D vectorSeedA, float aOffset, float aAmplitude, FVector2D vectorSeedB, float bOffset, float bAmplitude );
 	UFUNCTION(BlueprintCallable, Category = "Set Voronoi Parameter")
 	static void SetCellCount(int32 cellCount);
+
+	//clear all data
+	UFUNCTION(BlueprintCallable, Category = "Clear Data")
+	static void ClearAllArrays();
 
 
 	

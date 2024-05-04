@@ -64,7 +64,7 @@ void ATexture2DGeneration::BeginPlay()
 	UMyBlueprintFunctionLibrary::PrintVertexPosAndUniqueCellNumber();
 	UMyBlueprintFunctionLibrary::GroupVerticesWithSharedCells(pTexture);
 	UMyBlueprintFunctionLibrary::PrintPairedVertices();
-	//UMyBlueprintFunctionLibrary::DrawDebugEdges(GetWorld());
+	UMyBlueprintFunctionLibrary::DrawDebugEdges(GetWorld());
 	//functions below is to create polygons
 	UMyBlueprintFunctionLibrary::ProcessVerticesForPolyCalculation(pTexture);
 	UMyBlueprintFunctionLibrary::AssignVertexUniqueIndex();
@@ -77,6 +77,8 @@ void ATexture2DGeneration::BeginPlay()
 	UMyBlueprintFunctionLibrary::SetCityCenterHeightSigma(MaxHeight, CenterPos, SigmaX,
 	SigmaY);
 	UMyBlueprintFunctionLibrary::CreateVoronoiShapePolygon(ProceduralMesh, CityMaterialInterface);
+	//
+	UMyBlueprintFunctionLibrary::ClearAllArrays();
 	
 	
 }

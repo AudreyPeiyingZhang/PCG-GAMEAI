@@ -1476,7 +1476,7 @@ void UMyBlueprintFunctionLibrary::CreateVoronoiShapePolygon(UProceduralMeshCompo
 		//get center point 
 		FVector CentroidPos = CurrentCell.CalculateCentroid();
 		FVector CenterNormal(0, 0, 1); 
-		FVector2D CenterUV0(0, 0); 
+		FVector2D CenterUV0(0.0f, 0.0f); 
 		FVector2D CenterUV1(CentroidPos.X / UVScale, CentroidPos.Y / UVScale);
 		//road
 		FVector2D CenterUV2(0, 0); 
@@ -1493,7 +1493,7 @@ void UMyBlueprintFunctionLibrary::CreateVoronoiShapePolygon(UProceduralMeshCompo
 		{
 			FVector VtxPos = CurrentCell.VerticesPosition[i];
 			FVector VtxNormal(0, 0, 1); 
-			FVector2D VtxUV0(0, 0); 
+			FVector2D VtxUV0(0.0f, 0.0f); 
 			FVector2D VtxUV1(VtxPos.X / UVScale, VtxPos.Y / UVScale); 
 			FVector2D VtxUV2(0, 0); 
 
@@ -1515,10 +1515,10 @@ void UMyBlueprintFunctionLibrary::CreateVoronoiShapePolygon(UProceduralMeshCompo
 			const FVertexData CenterVtxData = CentroidVertexData;
 			const FVertexData FirstVtxData = CellVerticesData[i];
 			FVertexData NextVtxData = CellVerticesData[(i+1)%CellVerticesData.Num()];
-			if(NextVtxData.VtxUV0 == FVector2D(0,0))
+			if(NextVtxData.VtxUV0 == FVector2D(0.0f,0.0f))
 			{
 				float Dist = (NextVtxData.VtxPos - FirstVtxData.VtxPos).Length();
-				NextVtxData.VtxUV0 = FVector2D(1*Dist,0);
+				NextVtxData.VtxUV0 = FVector2D(1*Dist,0.0f);
 				NextVtxData.VtxIndex = AddVertex(NextVtxData);
 			}
 			SingleTriangleData.Add(CenterVtxData);
@@ -1540,17 +1540,44 @@ void UMyBlueprintFunctionLibrary::CreateVoronoiShapePolygon(UProceduralMeshCompo
 			
 		}
 	}
-
-	//ProceduralMesh->CreateMeshSection(0, WholeVertices, Triangles, Normal, UV0, TArray<FColor>(), TArray<FProcMeshTangent>(), true);
+	
 	ProceduralMesh->CreateMeshSection(0, WholeVertices, Triangles, Normal, UV0,UV1,UV2,UV0, TArray<FColor>(), TArray<FProcMeshTangent>(), true);
 	
-	//ProceduralMesh->UpdateMeshSection(0,WholeVertices,Normal, UV1,TArray<FColor>(), TArray<FProcMeshTangent>());
-	//ProceduralMesh->UpdateMeshSection(0,WholeVertices,Normal, UV2,TArray<FColor>(), TArray<FProcMeshTangent>());
 	if (MaterialInstance)
 	{
 		ProceduralMesh->SetMaterial(0, MaterialInstance);
 	}
 	
+}
+
+void UMyBlueprintFunctionLibrary::ClearAllArrays()
+{
+
+	VoronoiSeeds.Empty();
+	Vertices.Empty();
+	MergedVertices.Empty();
+	ClosestCellVoronoiSeedXY.Empty();
+    VerticesWithUniqueCellNumber.Empty();
+	MergedCornerVerticesEdges.Empty();
+	Merged4CellCountVerticesEdges.Empty();
+	CellUniqueNumbers.Empty();
+    PairedVertices.Empty();
+	//below is for poly calculation
+	ProcessedVertices.Empty();
+	VertexIndexMap.Empty();
+	SameCellVertices.Empty();
+	CellWithVerticesArrays.Empty();
+	CellWithEdgesArrays.Empty();
+	Cells.Empty();
+	//Make Triangles
+	WholeVertices.Empty();
+	Triangles.Empty();
+	WholeVerticesIndex.Empty();
+	//static TMap<FVertexData, int32> GlobalVertexIndexMap;
+	UV0.Empty();
+	UV1.Empty();
+	UV2.Empty();
+	Normal.Empty();
 }
 
 
