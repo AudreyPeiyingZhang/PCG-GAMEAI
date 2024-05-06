@@ -138,6 +138,7 @@ FVector2D UMyBlueprintFunctionLibrary::VectorBSeed;
 float UMyBlueprintFunctionLibrary::BOffset;
 float UMyBlueprintFunctionLibrary::BAmplitude;
 int32 UMyBlueprintFunctionLibrary::CellCount;
+float UMyBlueprintFunctionLibrary::RoadWidth;
 
 void UMyBlueprintFunctionLibrary::InitializeClosestCellVoronoiSeedXY(UTexture2D* Texture2D)
 {
@@ -1120,6 +1121,11 @@ void UMyBlueprintFunctionLibrary::SetCityCenterHeightSigma(float maxHeight, FVec
 	
 }
 
+void UMyBlueprintFunctionLibrary::SetRoadWidth(float roadWidth)
+{
+	RoadWidth = roadWidth;
+}
+
 float UMyBlueprintFunctionLibrary::UseNormalDistributionToGetBuildingHeight(FVector2D CurrentPos)
 {
 	const float exponent = FMath::Exp(-(FMath::Square(CurrentPos.X - CityCenterPos.X) / (2 * SigmaX * SigmaX) 
@@ -1339,7 +1345,28 @@ void UMyBlueprintFunctionLibrary::ExtrudePolygon(TArray<int32> BaseTriangle, TAr
 	
 }
 
-void UMyBlueprintFunctionLibrary::TriangleFanSubdivide(TArray<int32> VtxIndex, TArray<FVertexData> VtxData)
+FVector UMyBlueprintFunctionLibrary::CalculateBisector(FVector VtxA, FVector VtxB, FVector VtxC)
+{
+	const FVector DirBA = (VtxA - VtxB).GetSafeNormal();
+	const FVector DirBC = (VtxC - VtxB).GetSafeNormal();
+	
+	const FVector BiSector = (DirBA + DirBC).GetSafeNormal();
+
+	const float DotProduct = FVector::DotProduct(DirBA, DirBC);
+	const float Angle = FMath::Acos(FMath::Clamp(DotProduct, -1.0f, 1.0f));
+	const float HalfAngle = Angle/2;
+	const float Length = RoadWidth/FMath::Sin(HalfAngle);
+
+	const FVector BisectorWithLength = BiSector * Length + VtxB;
+	UE_LOG(LogTemp, Log, TEXT("DirBA: %s, DirBC: %s, BiSector: %s, Angle: %f, HalfAngle: %f, Length: %f, BisctorWithLenghth: %s"),
+	*DirBA.ToString(), *DirBC.ToString(), *BiSector.ToString(), FMath::RadiansToDegrees(Angle), FMath::RadiansToDegrees(HalfAngle), Length, *BisectorWithLength.ToString());
+	
+	return BisectorWithLength;
+	
+	
+}
+
+void UMyBlueprintFunctionLibrary::TriangleFanSubdivide(FVertexData PreVtx, FVertexData NextNextVtx, TArray<int32> VtxIndex, TArray<FVertexData> VtxData)
 {
 	TArray<int32> TwoBase;
 	TwoBase.Empty();
@@ -1352,7 +1379,7 @@ void UMyBlueprintFunctionLibrary::TriangleFanSubdivide(TArray<int32> VtxIndex, T
 	const FVector SecondPos = VtxData[2].VtxPos;
 
 	//mid first and center
-	FVector MidBetweenCenterAndFirstVtxPos = (CenterPos + FirstPos)/2;
+	FVector MidBetweenCenterAndFirstVtxPos = CalculateBisector(PreVtx.VtxPos,FirstPos,SecondPos);
 	FVector MidBetweenCenterAndFirstVtxNormal = FVector(0,0,1);
 	FVector V0 = MidBetweenCenterAndFirstVtxPos - FirstPos;
 	FVector V1 = SecondPos - FirstPos;
@@ -1367,7 +1394,7 @@ void UMyBlueprintFunctionLibrary::TriangleFanSubdivide(TArray<int32> VtxIndex, T
 	MidBetweenCenterAndFirstVtxData.VtxIndex = AddVertex(MidBetweenCenterAndFirstVtxData);
 
 	//mid second and center
-	FVector MidBetweenCenterAndSecondVtxPos = (CenterPos + SecondPos)/2;
+	FVector MidBetweenCenterAndSecondVtxPos = CalculateBisector(FirstPos, SecondPos, NextNextVtx.VtxPos);
 	FVector MidBetweenCenterAndSecondVtxNormal = FVector(0,0,1);
 	FVector V2 = MidBetweenCenterAndSecondVtxPos - SecondPos;
 	FVector V3 = FirstPos - SecondPos;
@@ -1515,6 +1542,12 @@ void UMyBlueprintFunctionLibrary::CreateVoronoiShapePolygon(UProceduralMeshCompo
 			const FVertexData CenterVtxData = CentroidVertexData;
 			const FVertexData FirstVtxData = CellVerticesData[i];
 			FVertexData NextVtxData = CellVerticesData[(i+1)%CellVerticesData.Num()];
+
+			//to calculate the bisectors
+			FVertexData PrevVtxData = CellVerticesData[(i - 1 + CellVerticesData.Num()) % CellVerticesData.Num()];
+			FVertexData NextNextVtxData = CellVerticesData[(i + 2) % CellVerticesData.Num()];
+
+			//change the UV from(0,0) to(1,0)
 			if(NextVtxData.VtxUV0 == FVector2D(0.0f,0.0f))
 			{
 				float Dist = (NextVtxData.VtxPos - FirstVtxData.VtxPos).Length();
@@ -1536,7 +1569,7 @@ void UMyBlueprintFunctionLibrary::CreateVoronoiShapePolygon(UProceduralMeshCompo
 			SingleTriangleIndex.Add(NextVtxIndex);
 
 
-			TriangleFanSubdivide(SingleTriangleIndex,SingleTriangleData);
+			TriangleFanSubdivide(PrevVtxData, NextNextVtxData,SingleTriangleIndex,SingleTriangleData);
 			
 		}
 	}

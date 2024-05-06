@@ -199,6 +199,48 @@ public:
 		
 		return Centroid;
 	}
+	
+	FVector CalculateIncenter()
+	{
+		if (VerticesPosition.Num() < 3)
+		{
+			return FVector(0, 0, 0); // Not enough vertices
+		}
+
+		FVector WeightedIncenter(0.0f, 0.0f, 0.0f);
+		float TotalWeight = 0.0f;
+		
+		for (int i = 0; i < VerticesPosition.Num(); ++i)
+		{
+			
+			FVector CurrentVertex = VerticesPosition[i];
+			FVector NextVertex = VerticesPosition[(i + 1) % VerticesPosition.Num()];
+			FVector PrevVertex = VerticesPosition[(i - 1 + VerticesPosition.Num()) % VerticesPosition.Num()];
+
+		
+			float Edge1Length = (CurrentVertex - NextVertex).Size();
+			float Edge2Length = (CurrentVertex - PrevVertex).Size();
+
+		
+			float Weight = Edge1Length + Edge2Length;
+
+			
+			WeightedIncenter += CurrentVertex * Weight;
+
+
+			TotalWeight += Weight;
+		}
+
+		
+		if (TotalWeight > 0.0f)
+		{
+			WeightedIncenter /= TotalWeight;
+		}
+
+		return WeightedIncenter;
+		
+	}
+
 
 
 
@@ -334,7 +376,9 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Polygons Calculation")
 	static void CreateVoronoiShapePolygon(UProceduralMeshComponent* ProceduralMesh, UMaterialInterface* MaterialInstance);
 	UFUNCTION(BlueprintCallable, Category = "Polygons Calculation")
-	static void TriangleFanSubdivide(TArray<int32> VtxIndex,TArray<FVertexData> VtxData);
+	static void TriangleFanSubdivide(FVertexData PreVtx, FVertexData NextNextVtx,TArray<int32> VtxIndex,TArray<FVertexData> VtxData);
+	UFUNCTION(BlueprintCallable, Category = "Polygons Calculation")
+	static FVector CalculateBisector(FVector VtxA, FVector VtxB, FVector VtxC);
 	UFUNCTION(BlueprintCallable, Category = "Polygons Calculation")
 	static FVector FindKeyByValue(const TMap<FVector, int32>& Map, int32 ValueToFind);
 	UFUNCTION(BlueprintCallable, Category = "Polygons Calculation")
@@ -361,6 +405,10 @@ public:
 	static void SetVoronoiSeed(FVector2D vectorSeedA, float aOffset, float aAmplitude, FVector2D vectorSeedB, float bOffset, float bAmplitude );
 	UFUNCTION(BlueprintCallable, Category = "Set Voronoi Parameter")
 	static void SetCellCount(int32 cellCount);
+
+	//road width
+	UFUNCTION(BlueprintCallable, Category = "Set Road Width")
+	static void SetRoadWidth(float roadWidth);
 
 	//clear all data
 	UFUNCTION(BlueprintCallable, Category = "Clear Data")
@@ -404,6 +452,9 @@ public:
 	static float SigmaX;
 	static float SigmaY;
 
+	//road width
+	static float RoadWidth;
+	
 	//setvoronoi
 	static FVector2D VectorASeed;
 	static float AOffset;

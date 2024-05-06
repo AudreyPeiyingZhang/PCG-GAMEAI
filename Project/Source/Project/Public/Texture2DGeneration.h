@@ -58,5 +58,7 @@ protected:
 	float BAmplitude = 4.9;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "VoronoiScale")
 	int CellCount = 20;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "RoadWidth")
+	float RoadWidth = 1.0f;
 
 };

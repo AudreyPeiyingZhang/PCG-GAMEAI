@@ -49,6 +49,7 @@ void ATexture2DGeneration::BeginPlay()
 	//UMyBlueprintFunctionLibrary::SetTexture2DPixels(Texture2D, 20, 20, FColor::Red);
 	//
 	UMyBlueprintFunctionLibrary::SetVoronoiSeed(VectorSeedA, AOffset, AAmplitude, VectorSeedB, BOffset, BAmplitude);
+	UMyBlueprintFunctionLibrary::SetRoadWidth(RoadWidth);
 	UMyBlueprintFunctionLibrary::SetCellCount(CellCount);
 	
 	//UMyBlueprintFunctionLibrary::InitializeClosestCellVoronoiSeedXY(pTexture);
