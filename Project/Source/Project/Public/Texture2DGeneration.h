@@ -24,6 +24,8 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Regenerate")
 	void Regenerate();
 	
+	
+	
 
 protected:
 	// Called when the game starts or when spawned

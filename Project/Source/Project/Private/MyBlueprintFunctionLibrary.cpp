@@ -64,7 +64,7 @@ void UMyBlueprintFunctionLibrary::SetCellCount(int32 cellCount)
 	CellCount = cellCount;
 }
 
-float UMyBlueprintFunctionLibrary::RandomVector2DtoVector1D (FVector2D Vector2D, FVector2D a, float b, float c)
+float UMyBlueprintFunctionLibrary::Vector2DtoGeneratePseudoRandomVector1D (FVector2D Vector2D, FVector2D a, float b, float c)
 {
 	//avoid artifacts
 	FVector2D SmallerValue;
@@ -79,29 +79,29 @@ float UMyBlueprintFunctionLibrary::RandomVector2DtoVector1D (FVector2D Vector2D,
 
 
 
-FVector2D UMyBlueprintFunctionLibrary::RandomVector2DtoVector2D(FVector2D Vector2D)
+FVector2D UMyBlueprintFunctionLibrary::Vector2DtoGeneratePseudoRandomVector2D(FVector2D Vector2D)
 {
-	Vector2D.X = RandomVector2DtoVector1D(Vector2D, VectorASeed, AOffset, AAmplitude);
-	Vector2D.Y = RandomVector2DtoVector1D(Vector2D, VectorBSeed, BOffset, BAmplitude);
+	Vector2D.X = Vector2DtoGeneratePseudoRandomVector1D(Vector2D, VectorASeed, AOffset, AAmplitude);
+	Vector2D.Y = Vector2DtoGeneratePseudoRandomVector1D(Vector2D, VectorBSeed, BOffset, BAmplitude);
 	return Vector2D;
 	
 }
 
 
 
-float UMyBlueprintFunctionLibrary::RandomVector1DtoVector1D(float RandomFloatNumber, float a,float b)
+float UMyBlueprintFunctionLibrary::Vector1DtoGeneratePseudoRandomVector1D(float RandomFloatNumber, float a,float b)
 {
 	const float RandomNumber =  FMath::Frac(FMath::Sin(RandomFloatNumber + a)*b);
 	return RandomNumber;
 	
 }
 
-FVector UMyBlueprintFunctionLibrary::RandomVector1DtoVector3D(float RandomFloatNumber)
+FVector UMyBlueprintFunctionLibrary::Vector1DtoGeneratePseudoRandomVector3D(float RandomFloatNumber)
 {
 	FVector Vector3D;
-	Vector3D.X = RandomVector1DtoVector1D(RandomFloatNumber, 21.289,90.92);
-	Vector3D.Y = RandomVector1DtoVector1D(RandomFloatNumber, 61.281,40.02);
-	Vector3D.Z = RandomVector1DtoVector1D(RandomFloatNumber, 23.09,80.65);
+	Vector3D.X = Vector1DtoGeneratePseudoRandomVector1D(RandomFloatNumber, 21.289,90.92);
+	Vector3D.Y = Vector1DtoGeneratePseudoRandomVector1D(RandomFloatNumber, 61.281,40.02);
+	Vector3D.Z = Vector1DtoGeneratePseudoRandomVector1D(RandomFloatNumber, 23.09,80.65);
 	return Vector3D;
 }
 
@@ -222,8 +222,8 @@ void UMyBlueprintFunctionLibrary::VoronoiCalculation(UTexture2D* Texture2D)
 					const FVector2D CurrentCellXY = FVector2D(CellXY.X + i, CellXY.Y +j);
 					if(CurrentCellXY.X < 0 || CurrentCellXY.Y < 0 || CurrentCellXY.X >=CellCount || CurrentCellXY.Y >=CellCount) continue;
 					const FVector2D CurrentCellPixelXY = FVector2D(PixelsInEachCellX* CurrentCellXY.X,PixelsInEachCellY* CurrentCellXY.Y);
-					const int32 RandomX = FMath::Floor(FMath::Lerp(0, PixelsInEachCellX, RandomVector2DtoVector2D(CurrentCellPixelXY).X));
-					const int32 RandomY = FMath::Floor(FMath::Lerp(0, PixelsInEachCellY, RandomVector2DtoVector2D(CurrentCellPixelXY).Y));
+					const int32 RandomX = FMath::Floor(FMath::Lerp(0, PixelsInEachCellX, Vector2DtoGeneratePseudoRandomVector2D(CurrentCellPixelXY).X));
+					const int32 RandomY = FMath::Floor(FMath::Lerp(0, PixelsInEachCellY, Vector2DtoGeneratePseudoRandomVector2D(CurrentCellPixelXY).Y));
 						
 					FVector2D VoronoiSeedPixelXY = FVector2D((CurrentCellPixelXY.X + RandomX), (CurrentCellPixelXY.Y + RandomY));
 					
@@ -244,8 +244,8 @@ void UMyBlueprintFunctionLibrary::VoronoiCalculation(UTexture2D* Texture2D)
 
 			
 			
-			const float NoiseColor = RandomVector2DtoVector1D(ClosestCell, FVector2D(289.89, 38.02), 4.98, 60.90);
-			const FVector Color = RandomVector1DtoVector3D(NoiseColor);
+			const float NoiseColor = Vector2DtoGeneratePseudoRandomVector1D(ClosestCell, FVector2D(289.89, 38.02), 4.98, 60.90);
+			const FVector Color = Vector1DtoGeneratePseudoRandomVector3D(NoiseColor);
 			const FColor PixelDrawCol = FColor(Color.X * 255, Color.Y * 255,Color.Z * 255, 255);
 
 
@@ -1252,7 +1252,7 @@ void UMyBlueprintFunctionLibrary::ExtrudePolygon(TArray<int32> BaseTriangle, TAr
 	//setup building height
 	FVector2D BuildingCenter = FVector2D(BaseVtxData[0].VtxPos.X,BaseVtxData[0].VtxPos.Y);
 	float BuildingHeight = UseNormalDistributionToGetBuildingHeight(BuildingCenter);
-	float FakeNoise = (0.75f +(1.25f-0.85f)*RandomVector2DtoVector1D(BuildingCenter, FVector2D(2.463, 10.313), 6.24, 19.02));
+	float FakeNoise = (0.75f +(1.25f-0.85f)*Vector2DtoGeneratePseudoRandomVector1D(BuildingCenter, FVector2D(2.463, 10.313), 6.24, 19.02));
 	BuildingHeight*=FakeNoise;
 	
 	for(int i =0; i<BaseVtxData.Num();i++)
