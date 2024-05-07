@@ -17,8 +17,12 @@ public:
 	// Sets default values for this actor's properties
 	ATexture2DGeneration();
 	virtual void Tick(float DeltaTime) override;
-
-
+	UFUNCTION(BlueprintCallable, Category = "Clear")
+	void ClearLastGeneration();
+	UFUNCTION(BlueprintCallable, Category = "ResetParameters")
+	void ResetParameters();
+	UFUNCTION(BlueprintCallable, Category = "Regenerate")
+	void Regenerate();
 	
 
 protected:
@@ -44,21 +48,24 @@ protected:
 	float SigmaX = 45.0f;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Building")
 	float SigmaY = 45.0f;
+	//voronoi seed
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "VoronoiSeed")
-	FVector2D VectorSeedA = FVector2D(29.03, 90.32);
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "VoronoiSeed")
-	float AOffset = 8.23;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "VoronoiSeed")
-	float AAmplitude = 23.44;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "VoronoiSeed")
-	FVector2D VectorSeedB = FVector2D(9.12, 2.39);
+	float AOffset = 9.45;
+
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "VoronoiSeed")
 	float BOffset= 10.01;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "VoronoiSeed")
-	float BAmplitude = 4.9;
+
+	// cell count
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "VoronoiScale")
 	int CellCount = 20;
+
+	//road width
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "RoadWidth")
 	float RoadWidth = 1.0f;
 
+	//resolution
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "TextureResolution")
+	int32 TextureResolutionInX = 200;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "TextureResolution")
+	int32 TextureResolutionInY = 200;
 };

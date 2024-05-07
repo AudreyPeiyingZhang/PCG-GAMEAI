@@ -312,7 +312,7 @@ class PROJECT_API UMyBlueprintFunctionLibrary : public UBlueprintFunctionLibrary
 	GENERATED_BODY()
 public:
 	UFUNCTION(BlueprintCallable, Category = "Make Texture")
-	static UTexture2D* CreateTexture2D(int32 Width, int32 Height);
+	static UTexture2D* CreateTexture2D();
 	UFUNCTION(BlueprintCallable, Category = "Make Texture")
 	static void ClearTexture2D(UTexture2D* Texture2D, FColor Colour);
 	UFUNCTION(BlueprintCallable, Category = "Make Texture")
@@ -402,13 +402,17 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Normal Distribution")
 	static void SetCityCenterHeightSigma( float maxHeight, FVector2D centerPos, float sigmaX, float sigmaY);
 	UFUNCTION(BlueprintCallable, Category = "Set Voronoi Parameter")
-	static void SetVoronoiSeed(FVector2D vectorSeedA, float aOffset, float aAmplitude, FVector2D vectorSeedB, float bOffset, float bAmplitude );
+	static void SetVoronoiSeed(float aSeed,float bSeed);
 	UFUNCTION(BlueprintCallable, Category = "Set Voronoi Parameter")
 	static void SetCellCount(int32 cellCount);
 
 	//road width
 	UFUNCTION(BlueprintCallable, Category = "Set Road Width")
 	static void SetRoadWidth(float roadWidth);
+
+	//teture resolution
+	UFUNCTION(BlueprintCallable, Category = "Set Texture Resolution")
+	static void SetTextureResolution(int32 width, int32 height);
 
 	//clear all data
 	UFUNCTION(BlueprintCallable, Category = "Clear Data")
@@ -465,6 +469,10 @@ public:
 
 	//set cell count
 	static int32 CellCount;
+
+	//set texture resolution
+	static int32 TextureResolutionInX;
+	static int32 TextureResolutionInY;
 
 	//function to make texture 2d
 

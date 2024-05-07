@@ -4,9 +4,16 @@
 #include "MyBlueprintFunctionLibrary.h"
 #include "GameFramework/HUD.h"
 
-UTexture2D* UMyBlueprintFunctionLibrary::CreateTexture2D(int32 Width, int32 Height)
+
+void UMyBlueprintFunctionLibrary::SetTextureResolution(int32 width, int32 height)
 {
-	UTexture2D* Texture2D = UTexture2D::CreateTransient(Width, Height, PF_B8G8R8A8);
+	TextureResolutionInX = width;
+	TextureResolutionInY = height;
+}
+
+UTexture2D* UMyBlueprintFunctionLibrary::CreateTexture2D()
+{
+	UTexture2D* Texture2D = UTexture2D::CreateTransient(TextureResolutionInX, TextureResolutionInY, PF_B8G8R8A8);
 	Texture2D->Filter=TF_Nearest;
 	Texture2D->NeverStream = true;
 	return Texture2D;
@@ -42,15 +49,14 @@ void UMyBlueprintFunctionLibrary::SetTexture2DPixels(UTexture2D* Texture2D, int3
 	Texture2D->UpdateResource();
 }
 
-void UMyBlueprintFunctionLibrary::SetVoronoiSeed(FVector2D vectorSeedA, float aOffset, float aAmplitude, FVector2D vectorSeedB,
-	float bOffset, float bAmplitude)
+void UMyBlueprintFunctionLibrary::SetVoronoiSeed(float aSeed,float bSeed)
 {
-	VectorASeed = vectorSeedA;
-	AOffset = aOffset;
-	AAmplitude = aAmplitude;
-	VectorBSeed = vectorSeedB;
-	BOffset = bOffset;
-	BAmplitude = bAmplitude;
+	VectorASeed = FVector2D(3.453, 2.983);
+	AOffset = aSeed;
+	AAmplitude = 10000.0f;
+	VectorBSeed = FVector2D(5.932, 7.652);
+	BOffset = bSeed;
+	BAmplitude = 10000.0f;
 }
 
 void UMyBlueprintFunctionLibrary::SetCellCount(int32 cellCount)
@@ -139,6 +145,8 @@ float UMyBlueprintFunctionLibrary::BOffset;
 float UMyBlueprintFunctionLibrary::BAmplitude;
 int32 UMyBlueprintFunctionLibrary::CellCount;
 float UMyBlueprintFunctionLibrary::RoadWidth;
+int32 UMyBlueprintFunctionLibrary::TextureResolutionInX;
+int32 UMyBlueprintFunctionLibrary::TextureResolutionInY;
 
 void UMyBlueprintFunctionLibrary::InitializeClosestCellVoronoiSeedXY(UTexture2D* Texture2D)
 {
@@ -686,7 +694,7 @@ void UMyBlueprintFunctionLibrary::DrawVertexPositionsAndCellNumbersOnHUD(AHUD* H
 	
 
 	
-	for (const FVerticesEdgesStruct& Element : MergedCornerVerticesEdges)
+	for (const FVerticesEdgesStruct& Element : Merged4CellCountVerticesEdges)
 	{
 		FVector2D ScreenSpace;
 
@@ -1347,12 +1355,27 @@ void UMyBlueprintFunctionLibrary::ExtrudePolygon(TArray<int32> BaseTriangle, TAr
 
 FVector UMyBlueprintFunctionLibrary::CalculateBisector(FVector VtxA, FVector VtxB, FVector VtxC)
 {
+	
 	const FVector DirBA = (VtxA - VtxB).GetSafeNormal();
 	const FVector DirBC = (VtxC - VtxB).GetSafeNormal();
 	
-	const FVector BiSector = (DirBA + DirBC).GetSafeNormal();
+	FVector BiSector = (DirBA + DirBC).GetSafeNormal();
 
+	//see the angle is convex or concave
+	const float CrossProductZ = DirBA.X * DirBC.Y - DirBA.Y * DirBC.X;
 	const float DotProduct = FVector::DotProduct(DirBA, DirBC);
+
+	//if two vector is opposite(angle 180), rotate the first vector clockwise
+	if(DotProduct <= -0.99 && DotProduct >= -1.01)
+	{
+		BiSector = FVector(-DirBA.Y, DirBA.X, 0.0f);
+	}
+
+	//if angle is concave
+	else if(CrossProductZ < 0.0f)
+	{
+		BiSector  = -BiSector;
+	}
 	const float Angle = FMath::Acos(FMath::Clamp(DotProduct, -1.0f, 1.0f));
 	const float HalfAngle = Angle/2;
 	const float Length = RoadWidth/FMath::Sin(HalfAngle);

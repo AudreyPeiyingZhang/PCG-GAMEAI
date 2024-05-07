@@ -31,13 +31,45 @@ void ATexture2DGeneration::BeginPlay()
 {
 	Super::BeginPlay();
 
-	Plane->SetWorldLocation(FVector(100.0f,100.0f,-10.0f));
-	
+	Plane->SetWorldLocation(FVector(100.0f,100.0f,-1.0f));
+
 
 	
 	
+	
+}
+
+// Called every frame
+void ATexture2DGeneration::Tick(float DeltaTime)
+{
+	Super::Tick(DeltaTime);
+	
+
+}
+
+void ATexture2DGeneration::ClearLastGeneration()
+{
+	UMyBlueprintFunctionLibrary::ClearAllArrays();
+	ProceduralMesh->ClearAllMeshSections();
+	
+}
+
+void ATexture2DGeneration::ResetParameters()
+{
+	//
+	UMyBlueprintFunctionLibrary::SetTextureResolution(TextureResolutionInX, TextureResolutionInY);
+	UMyBlueprintFunctionLibrary::SetVoronoiSeed(AOffset,BOffset);
+	UMyBlueprintFunctionLibrary::SetRoadWidth(RoadWidth);
+	UMyBlueprintFunctionLibrary::SetCellCount(CellCount);
+	//normal distribution
+	UMyBlueprintFunctionLibrary::SetCityCenterHeightSigma(MaxHeight, CenterPos, SigmaX,
+	SigmaY);
+}
+
+void ATexture2DGeneration::Regenerate()
+{
 	//create texture2d
-	pTexture = UMyBlueprintFunctionLibrary::CreateTexture2D(200,200);
+	pTexture = UMyBlueprintFunctionLibrary::CreateTexture2D();
 	//set texture to material
 	MaterialInstance = UMaterialInstanceDynamic::Create(MaterialInterface, this);
 	MaterialInstance->SetTextureParameterValue(FName("BaseTexture"), pTexture);
@@ -47,12 +79,6 @@ void ATexture2DGeneration::BeginPlay()
 	UMyBlueprintFunctionLibrary::ClearTexture2D(pTexture, FColor::White);
 	//draw any (x,y) on texture2d pixel
 	//UMyBlueprintFunctionLibrary::SetTexture2DPixels(Texture2D, 20, 20, FColor::Red);
-	//
-	UMyBlueprintFunctionLibrary::SetVoronoiSeed(VectorSeedA, AOffset, AAmplitude, VectorSeedB, BOffset, BAmplitude);
-	UMyBlueprintFunctionLibrary::SetRoadWidth(RoadWidth);
-	UMyBlueprintFunctionLibrary::SetCellCount(CellCount);
-	
-	//UMyBlueprintFunctionLibrary::InitializeClosestCellVoronoiSeedXY(pTexture);
 	UMyBlueprintFunctionLibrary::VoronoiCalculation(pTexture);
 	UMyBlueprintFunctionLibrary::DrawVoronoiSeedsOnTexture2D(pTexture, FColor::Black);
 	UMyBlueprintFunctionLibrary::CalculateVertices(pTexture);
@@ -74,21 +100,8 @@ void ATexture2DGeneration::BeginPlay()
 	UMyBlueprintFunctionLibrary::AssignEachCellStruct();
 	UMyBlueprintFunctionLibrary::SortVerticesInCells();
 	UMyBlueprintFunctionLibrary::PrintCellsArray();
-	//normal distribution
-	UMyBlueprintFunctionLibrary::SetCityCenterHeightSigma(MaxHeight, CenterPos, SigmaX,
-	SigmaY);
+
 	UMyBlueprintFunctionLibrary::CreateVoronoiShapePolygon(ProceduralMesh, CityMaterialInterface);
-	//
-	UMyBlueprintFunctionLibrary::ClearAllArrays();
 	
-	
-}
-
-// Called every frame
-void ATexture2DGeneration::Tick(float DeltaTime)
-{
-	Super::Tick(DeltaTime);
-	
-
 }
 
