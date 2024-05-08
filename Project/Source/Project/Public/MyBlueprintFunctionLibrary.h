@@ -10,6 +10,28 @@
  * 
  */
 
+USTRUCT(BlueprintType)
+struct FGridPointWithPseudoRandomVector
+{
+	GENERATED_BODY()
+public:
+	FVector2D PixelPos;
+	FVector2D GridPseudoRandomVector;
+	FVector2D GridIndex;
+	FGridPointWithPseudoRandomVector() {}
+
+	FGridPointWithPseudoRandomVector(FVector2D InGridPos, FVector2D InGridPseudoRandomVector, FVector2D InGridIndex)
+	:PixelPos(InGridPos), GridPseudoRandomVector(InGridPseudoRandomVector), GridIndex(InGridIndex) {}
+
+	bool operator==(const FGridPointWithPseudoRandomVector& Other) const
+	{
+		return PixelPos == Other.PixelPos &&
+			   GridPseudoRandomVector == Other.GridPseudoRandomVector &&
+			   GridIndex == Other.GridIndex;
+	}
+
+	
+};
 
 
 UENUM(BlueprintType)
@@ -317,16 +339,21 @@ public:
 	static void ClearTexture2D(UTexture2D* Texture2D, FColor Colour);
 	UFUNCTION(BlueprintCallable, Category = "Make Texture")
 	static void SetTexture2DPixels(UTexture2D* Texture2D, int32 X, int32 Y, FColor Colour);
-	UFUNCTION(BlueprintCallable, Category = "Make Noise")
+	UFUNCTION(BlueprintCallable, Category = "Make PseudoNoise")
 	static float Vector2DtoGeneratePseudoRandomVector1D(FVector2D Vector2D, FVector2D a, float b, float c);
-	UFUNCTION(BlueprintCallable, Category = "Make Noise")
+	UFUNCTION(BlueprintCallable, Category = "Make PseudoNoise")
 	static FVector2D Vector2DtoGeneratePseudoRandomVector2D (FVector2D Vector2D);
-	UFUNCTION(BlueprintCallable, Category = "Make Noise")
+	UFUNCTION(BlueprintCallable, Category = "Make PseudoNoise")
 	static float Vector1DtoGeneratePseudoRandomVector1D (float RandomFloatNumber, float a,float b);
-	UFUNCTION(BlueprintCallable, Category = "Make Noise")
+	UFUNCTION(BlueprintCallable, Category = "Make PseudoNoise")
 	static FVector Vector1DtoGeneratePseudoRandomVector3D (float RandomFloatNumber);
 	//UFUNCTION(BlueprintCallable, Category = "Voronoi Calculation")
 	//static void VoronoiSeedsCalculation(UTexture2D* Texture2D,float CellCount);
+	//perlin noise
+	UFUNCTION(BlueprintCallable, Category = "Perlin Noise Calculation")
+	static float PerlinNoiseLerp(float l, float r, float t);
+	UFUNCTION(BlueprintCallable, Category = "Perlin Noise Calculation")
+	static void PerlinNoiseCalculation(UTexture2D* Texture2D, int32 GridCount);
 	UFUNCTION(BlueprintCallable, Category = "Voronoi Calculation")
 	static void DrawVoronoiSeedsOnTexture2D(UTexture2D* Texture2D, FColor color);
 	UFUNCTION(BlueprintCallable, Category = "Voronoi Calculation")

@@ -148,6 +148,128 @@ float UMyBlueprintFunctionLibrary::RoadWidth;
 int32 UMyBlueprintFunctionLibrary::TextureResolutionInX;
 int32 UMyBlueprintFunctionLibrary::TextureResolutionInY;
 
+float UMyBlueprintFunctionLibrary::PerlinNoiseLerp(float l, float r, float t)
+{
+	t = ((6 * t - 15) * t + 10) * t * t * t;
+	return FMath::Lerp(l, r, t);
+}
+
+void UMyBlueprintFunctionLibrary::PerlinNoiseCalculation(UTexture2D* Texture2D, int32 GridCount)
+{
+	const int32 Width = Texture2D->GetSizeX();
+	const int32 Height = Texture2D->GetSizeY();
+	FByteBulkData* RawImageDataOut = &Texture2D->GetPlatformData()->Mips[0].BulkData;
+	FColor* FormatedImageDataOut = static_cast<FColor*>(RawImageDataOut->Lock(LOCK_READ_WRITE));
+
+	const int32 PixelInEachGridX = Width/GridCount; 
+	const int32 PixelInEachGridY = Height/GridCount;
+
+	TArray<FGridPointWithPseudoRandomVector> GridWithPseudoRandomVectors;
+
+	int32 XCount =-1;
+	int32 YCount =-1;
+	
+	for(int32 X =0; X<Width-1; X+=PixelInEachGridX)
+	{
+		XCount++;
+		for(int32 Y = 0; Y<Height-1; Y+=PixelInEachGridY)
+		{
+			YCount++;
+			const FVector2D PseudoNoiseVector = Vector2DtoGeneratePseudoRandomVector2D(FVector2D(X,Y));
+			FGridPointWithPseudoRandomVector CurrentGridPoint(FVector2D(X,Y), PseudoNoiseVector, FVector2D(XCount,YCount));
+			GridWithPseudoRandomVectors.Add(CurrentGridPoint);
+		}
+		YCount = -1;
+	}
+
+	UE_LOG(LogTemp, Log, TEXT("Printing GridWithPseudoRandomVectors..."));
+	for (const FGridPointWithPseudoRandomVector& Element : GridWithPseudoRandomVectors)
+	{
+		UE_LOG(LogTemp, Log, TEXT("GridPoint - PixelPos: (%f, %f), GridPseudoRandomVector: (%f, %f), GridIndex: (%f, %f)"),
+			   Element.PixelPos.X, Element.PixelPos.Y,
+			   Element.GridPseudoRandomVector.X, Element.GridPseudoRandomVector.Y,
+			   Element.GridIndex.X, Element.GridIndex.Y);
+	}
+
+	for(int32 i =1;i<Width-1; i++)
+	{
+		for(int32 j =1; j<Height-1;j++)
+		{
+			FVector2D CurrentGridLeftBottomIndex = FVector2D(FMath::Floor(i/PixelInEachGridX),FMath::Floor(j/PixelInEachGridY));
+			
+			for(int32 k =0;k<GridWithPseudoRandomVectors.Num(); k++)
+			{
+				FVector2D GridLeftBottomIndex = GridWithPseudoRandomVectors[k].GridIndex;
+				if(CurrentGridLeftBottomIndex == GridLeftBottomIndex)
+				{
+					FVector2D CurrentRightBottomIndex = FVector2D(GridLeftBottomIndex.X+1, GridLeftBottomIndex.Y);
+					FVector2D CurrentLeftTopIndex = FVector2D(GridLeftBottomIndex.X, GridLeftBottomIndex.Y+1);
+					FVector2D CurrentRightTopIndex = FVector2D(GridLeftBottomIndex.X+1, GridLeftBottomIndex.Y+1);
+					FVector2D APos = GridWithPseudoRandomVectors[k].PixelPos;
+					FVector2D APseudoVector2D = GridWithPseudoRandomVectors[k].GridPseudoRandomVector.GetSafeNormal();
+					FVector2D BPos = FVector2D(0,0);
+					FVector2D CPos= FVector2D(0,0);
+					FVector2D DPos= FVector2D(0,0);
+					FVector2D BPseudoVector2D= FVector2D(0,0);
+					FVector2D CPseudoVector2D= FVector2D(0,0);
+					FVector2D DPseudoVector2D= FVector2D(0,0);
+					
+					FVector2D ProportionInCurrentGrid = FVector2D((i-GridWithPseudoRandomVectors[k].PixelPos.X)/PixelInEachGridX, (j-GridWithPseudoRandomVectors[k].PixelPos.Y)/PixelInEachGridY);
+					UE_LOG(LogTemp, Log, TEXT("Proportion (%f, %f)"), ProportionInCurrentGrid.X, ProportionInCurrentGrid.Y);
+					for(int32 g =0;g<GridWithPseudoRandomVectors.Num(); g++)
+					{
+
+						if(CurrentRightBottomIndex == GridWithPseudoRandomVectors[g].GridIndex)
+						{
+							DPos = GridWithPseudoRandomVectors[g].PixelPos;
+							DPseudoVector2D = (GridWithPseudoRandomVectors[g].GridPseudoRandomVector).GetSafeNormal();
+						}
+						if(CurrentLeftTopIndex == GridWithPseudoRandomVectors[g].GridIndex)
+						{
+							BPos = GridWithPseudoRandomVectors[g].PixelPos;
+							BPseudoVector2D = (GridWithPseudoRandomVectors[g].GridPseudoRandomVector).GetSafeNormal();
+						}
+						if(CurrentRightTopIndex == GridWithPseudoRandomVectors[g].GridIndex)
+						{
+							CPos = GridWithPseudoRandomVectors[g].PixelPos;
+							CPseudoVector2D = (GridWithPseudoRandomVectors[g].GridPseudoRandomVector).GetSafeNormal();
+						}
+					}
+
+					FVector2D PPos = FVector2D(i,j);
+					FVector2D AP = (PPos - APos).GetSafeNormal();
+					FVector2D BP = (PPos - BPos).GetSafeNormal();
+					FVector2D CP = (PPos - CPos).GetSafeNormal();
+					FVector2D DP = (PPos - DPos).GetSafeNormal();
+
+					float ADotProduct = FVector2D::DotProduct(AP,APseudoVector2D);
+					float BDotProduct = FVector2D::DotProduct(BP,BPseudoVector2D);
+					float CDotProduct = FVector2D::DotProduct(CP,CPseudoVector2D);
+					float DDotProduct = FVector2D::DotProduct(DP,DPseudoVector2D);
+
+					float temp0 = PerlinNoiseLerp(ADotProduct, DDotProduct, ProportionInCurrentGrid.X);
+					float temp1 = PerlinNoiseLerp(BDotProduct, CDotProduct, ProportionInCurrentGrid.X);
+					float noiseValue = PerlinNoiseLerp(temp0, temp1, ProportionInCurrentGrid.Y);
+					noiseValue = (noiseValue + 1.0) / 2.0;
+					UE_LOG(LogTemp, Log, TEXT("Pixel Position (%d, %d) - Noise Value: %f"), i, j, noiseValue);
+					const FColor PixelDrawCol = FColor(noiseValue* 255, noiseValue* 255,noiseValue* 255, 255);
+					const FColor PixelColor = PixelDrawCol;
+					FormatedImageDataOut[(j * Width) + i] = PixelColor;
+					
+				}
+			}
+
+			
+			
+			
+		}
+	}
+
+	RawImageDataOut->Unlock();
+	Texture2D->UpdateResource();
+	
+}
+
 void UMyBlueprintFunctionLibrary::InitializeClosestCellVoronoiSeedXY(UTexture2D* Texture2D)
 {
 	const int32 Width = Texture2D -> GetSizeX();

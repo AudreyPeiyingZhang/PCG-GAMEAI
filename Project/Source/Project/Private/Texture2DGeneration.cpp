@@ -32,6 +32,18 @@ void ATexture2DGeneration::BeginPlay()
 	Super::BeginPlay();
 
 	Plane->SetWorldLocation(FVector(100.0f,100.0f,-1.0f));
+	//create texture2d
+	ResetParameters();
+	pTexture = UMyBlueprintFunctionLibrary::CreateTexture2D();
+	//set texture to material
+	MaterialInstance = UMaterialInstanceDynamic::Create(MaterialInterface, this);
+	MaterialInstance->SetTextureParameterValue(FName("BaseTexture"), pTexture);
+	//set material to object
+	Plane->SetMaterial(0, MaterialInstance);
+	//clear texture2d
+	UMyBlueprintFunctionLibrary::ClearTexture2D(pTexture, FColor::Black);
+
+	UMyBlueprintFunctionLibrary::PerlinNoiseCalculation(pTexture, 10);
 
 
 	
