@@ -49,19 +49,29 @@ void UMyBlueprintFunctionLibrary::SetTexture2DPixels(UTexture2D* Texture2D, int3
 	Texture2D->UpdateResource();
 }
 
-void UMyBlueprintFunctionLibrary::SetVoronoiSeed(float aSeed,float bSeed)
+void UMyBlueprintFunctionLibrary::SetVoronoiAndPerlinSeed(float aSeed,float bSeed, float perlinSeed)
 {
 	VectorASeed = FVector2D(3.453, 2.983);
 	AOffset = aSeed;
-	AAmplitude = 10000.0f;
+	AAmplitude = 100000.0f;
 	VectorBSeed = FVector2D(5.932, 7.652);
 	BOffset = bSeed;
-	BAmplitude = 10000.0f;
+	BAmplitude = 100000.0f;
+	PerlinNoiseSeed = perlinSeed;
 }
 
 void UMyBlueprintFunctionLibrary::SetCellCount(int32 cellCount)
 {
 	CellCount = cellCount;
+}
+
+
+FVector2D UMyBlueprintFunctionLibrary::PelinNoiseGeneratePseudoRandomVector2D(FVector2D Vector2D, float perlinNoiseSeed)
+{
+	Vector2D.X = Vector2DtoGeneratePseudoRandomVector1D(Vector2D, FVector2D(12.32+perlinNoiseSeed, 1.235+perlinNoiseSeed), 12.3+perlinNoiseSeed, 1000000.0f+perlinNoiseSeed);
+	Vector2D.Y = Vector2DtoGeneratePseudoRandomVector1D(Vector2D, FVector2D(9.322+perlinNoiseSeed, 4.031+perlinNoiseSeed),55.9+perlinNoiseSeed, 1000000.0f+perlinNoiseSeed);
+	Vector2D = Vector2D*2.0f -1.0f;
+	return Vector2D;
 }
 
 float UMyBlueprintFunctionLibrary::Vector2DtoGeneratePseudoRandomVector1D (FVector2D Vector2D, FVector2D a, float b, float c)
@@ -70,7 +80,7 @@ float UMyBlueprintFunctionLibrary::Vector2DtoGeneratePseudoRandomVector1D (FVect
 	FVector2D SmallerValue;
 	SmallerValue.X = FMath::Sin(Vector2D.X);
 	SmallerValue.Y = FMath::Sin(Vector2D.Y);
-	//get scalar from vector2D
+	//get scalar from vector2D 
 	float Random = FVector2D::DotProduct(SmallerValue, a);
 	Random = FMath::Frac(FMath::Sin(Random + b)* c);
 	return Random;
@@ -147,6 +157,7 @@ int32 UMyBlueprintFunctionLibrary::CellCount;
 float UMyBlueprintFunctionLibrary::RoadWidth;
 int32 UMyBlueprintFunctionLibrary::TextureResolutionInX;
 int32 UMyBlueprintFunctionLibrary::TextureResolutionInY;
+int32 UMyBlueprintFunctionLibrary::PerlinNoiseSeed;
 
 float UMyBlueprintFunctionLibrary::PerlinNoiseLerp(float l, float r, float t)
 {
@@ -154,114 +165,97 @@ float UMyBlueprintFunctionLibrary::PerlinNoiseLerp(float l, float r, float t)
 	return FMath::Lerp(l, r, t);
 }
 
-void UMyBlueprintFunctionLibrary::PerlinNoiseCalculation(UTexture2D* Texture2D, int32 GridCount)
+float UMyBlueprintFunctionLibrary::PerlinNoiseCalculation(UTexture2D* Texture2D, int32 GridCount, float perlinNoiseSeed, FVector2D PixelPos)
+{
+	const int32 Width = Texture2D->GetSizeX();
+	const int32 Height = Texture2D->GetSizeY();
+
+	const int32 PixelInEachGridX = Width/GridCount; 
+	const int32 PixelInEachGridY = Height/GridCount;
+	int32 i = PixelPos.X;
+	int32 j = PixelPos.Y;
+
+	//left bottom ---A
+	FVector2D CurrentGridLeftBottomIndex = FVector2D(FMath::Floor(i/(PixelInEachGridX)),FMath::Floor(j/(PixelInEachGridX)));
+	FVector2D CurrentGridLeftBottomPseudoVector = PelinNoiseGeneratePseudoRandomVector2D(CurrentGridLeftBottomIndex, perlinNoiseSeed);
+	FGridPointWithPseudoRandomVector CurrentLeftBottom (CurrentGridLeftBottomPseudoVector,CurrentGridLeftBottomIndex);
+
+	//right bottom ----D
+	FVector2D CurrentGridRightBottomIndex = FVector2D(CurrentLeftBottom.GridIndex.X+1, CurrentLeftBottom.GridIndex.Y);
+	FVector2D CurrentGridRightBottomPseudoVector = PelinNoiseGeneratePseudoRandomVector2D(CurrentGridRightBottomIndex, perlinNoiseSeed);
+	FGridPointWithPseudoRandomVector CurrentRightBottom (CurrentGridRightBottomPseudoVector,CurrentGridRightBottomIndex);
+
+	//left top ---B
+	
+	FVector2D CurrentGridLeftTopIndex = FVector2D(CurrentLeftBottom.GridIndex.X, CurrentLeftBottom.GridIndex.Y+1);
+	FVector2D CurrentGridLeftTopPseudoVector = PelinNoiseGeneratePseudoRandomVector2D(CurrentGridLeftTopIndex, perlinNoiseSeed);
+	FGridPointWithPseudoRandomVector CurrentLeftTop (CurrentGridLeftTopPseudoVector,CurrentGridLeftTopIndex);
+	
+	//right top ---C
+	FVector2D CurrentGridRightTopIndex = FVector2D(CurrentLeftBottom.GridIndex.X+1, CurrentLeftBottom.GridIndex.Y+1);
+	FVector2D CurrentGridRightTopPseudoVector = PelinNoiseGeneratePseudoRandomVector2D(CurrentGridRightTopIndex, perlinNoiseSeed);
+	FGridPointWithPseudoRandomVector CurrentRightTop (CurrentGridRightTopPseudoVector,CurrentGridRightTopIndex);
+
+	//FVector2D PPos = FVector2D(i,j);
+	FVector2D PPos = FVector2D((i-CurrentLeftBottom.GridIndex.X*PixelInEachGridX)/(PixelInEachGridX), (j-CurrentLeftBottom.GridIndex.Y*PixelInEachGridY)/(PixelInEachGridY));
+	FVector2D AP = (PPos - FVector2D(0,0));
+	FVector2D BP = (PPos - FVector2D(0,1));
+	FVector2D CP = (PPos - FVector2D(1,1));
+	FVector2D DP = (PPos - FVector2D(1,0));
+
+	float ADotProduct = FVector2D::DotProduct(CurrentLeftBottom.GridPseudoRandomVector,AP);
+	float BDotProduct = FVector2D::DotProduct(CurrentLeftTop.GridPseudoRandomVector,BP);
+	float CDotProduct = FVector2D::DotProduct(CurrentRightTop.GridPseudoRandomVector, CP);
+	float DDotProduct = FVector2D::DotProduct(CurrentRightBottom.GridPseudoRandomVector, DP);
+
+	float ADLerp = PerlinNoiseLerp(ADotProduct, DDotProduct, PPos.X);
+	float BCLerp = PerlinNoiseLerp(BDotProduct, CDotProduct, PPos.X);
+	float NoiseValue = PerlinNoiseLerp(ADLerp, BCLerp, PPos.Y);
+
+	NoiseValue = (NoiseValue + 1.0)/2;
+
+	return  NoiseValue;
+}
+
+void UMyBlueprintFunctionLibrary::FractualBrownMotion(int32 octaves, int32 initialFrequency, float initialStrength,UTexture2D* Texture2D)
 {
 	const int32 Width = Texture2D->GetSizeX();
 	const int32 Height = Texture2D->GetSizeY();
 	FByteBulkData* RawImageDataOut = &Texture2D->GetPlatformData()->Mips[0].BulkData;
 	FColor* FormatedImageDataOut = static_cast<FColor*>(RawImageDataOut->Lock(LOCK_READ_WRITE));
 
-	const int32 PixelInEachGridX = Width/GridCount; 
-	const int32 PixelInEachGridY = Height/GridCount;
 
-	TArray<FGridPointWithPseudoRandomVector> GridWithPseudoRandomVectors;
-
-	int32 XCount =-1;
-	int32 YCount =-1;
 	
-	for(int32 X =0; X<Width-1; X+=PixelInEachGridX)
+	for(int32 i =0;i<Width; i++)
 	{
-		XCount++;
-		for(int32 Y = 0; Y<Height-1; Y+=PixelInEachGridY)
+		for(int32 j =0; j<Height;j++)
 		{
-			YCount++;
-			const FVector2D PseudoNoiseVector = Vector2DtoGeneratePseudoRandomVector2D(FVector2D(X,Y));
-			FGridPointWithPseudoRandomVector CurrentGridPoint(FVector2D(X,Y), PseudoNoiseVector, FVector2D(XCount,YCount));
-			GridWithPseudoRandomVectors.Add(CurrentGridPoint);
-		}
-		YCount = -1;
-	}
-
-	UE_LOG(LogTemp, Log, TEXT("Printing GridWithPseudoRandomVectors..."));
-	for (const FGridPointWithPseudoRandomVector& Element : GridWithPseudoRandomVectors)
-	{
-		UE_LOG(LogTemp, Log, TEXT("GridPoint - PixelPos: (%f, %f), GridPseudoRandomVector: (%f, %f), GridIndex: (%f, %f)"),
-			   Element.PixelPos.X, Element.PixelPos.Y,
-			   Element.GridPseudoRandomVector.X, Element.GridPseudoRandomVector.Y,
-			   Element.GridIndex.X, Element.GridIndex.Y);
-	}
-
-	for(int32 i =1;i<Width-1; i++)
-	{
-		for(int32 j =1; j<Height-1;j++)
-		{
-			FVector2D CurrentGridLeftBottomIndex = FVector2D(FMath::Floor(i/PixelInEachGridX),FMath::Floor(j/PixelInEachGridY));
 			
-			for(int32 k =0;k<GridWithPseudoRandomVectors.Num(); k++)
+			float NoiseValue = 0;
+			float frequency = initialFrequency;
+			float strength = initialStrength;
+			
+
+			for (int32 k = 0; k < octaves; k++)
 			{
-				FVector2D GridLeftBottomIndex = GridWithPseudoRandomVectors[k].GridIndex;
-				if(CurrentGridLeftBottomIndex == GridLeftBottomIndex)
-				{
-					FVector2D CurrentRightBottomIndex = FVector2D(GridLeftBottomIndex.X+1, GridLeftBottomIndex.Y);
-					FVector2D CurrentLeftTopIndex = FVector2D(GridLeftBottomIndex.X, GridLeftBottomIndex.Y+1);
-					FVector2D CurrentRightTopIndex = FVector2D(GridLeftBottomIndex.X+1, GridLeftBottomIndex.Y+1);
-					FVector2D APos = GridWithPseudoRandomVectors[k].PixelPos;
-					FVector2D APseudoVector2D = GridWithPseudoRandomVectors[k].GridPseudoRandomVector.GetSafeNormal();
-					FVector2D BPos = FVector2D(0,0);
-					FVector2D CPos= FVector2D(0,0);
-					FVector2D DPos= FVector2D(0,0);
-					FVector2D BPseudoVector2D= FVector2D(0,0);
-					FVector2D CPseudoVector2D= FVector2D(0,0);
-					FVector2D DPseudoVector2D= FVector2D(0,0);
-					
-					FVector2D ProportionInCurrentGrid = FVector2D((i-GridWithPseudoRandomVectors[k].PixelPos.X)/PixelInEachGridX, (j-GridWithPseudoRandomVectors[k].PixelPos.Y)/PixelInEachGridY);
-					UE_LOG(LogTemp, Log, TEXT("Proportion (%f, %f)"), ProportionInCurrentGrid.X, ProportionInCurrentGrid.Y);
-					for(int32 g =0;g<GridWithPseudoRandomVectors.Num(); g++)
-					{
+				float layerNoise = PerlinNoiseCalculation(Texture2D, frequency, PerlinNoiseSeed + frequency, FVector2D(i, j));
+				NoiseValue += layerNoise * strength;
 
-						if(CurrentRightBottomIndex == GridWithPseudoRandomVectors[g].GridIndex)
-						{
-							DPos = GridWithPseudoRandomVectors[g].PixelPos;
-							DPseudoVector2D = (GridWithPseudoRandomVectors[g].GridPseudoRandomVector).GetSafeNormal();
-						}
-						if(CurrentLeftTopIndex == GridWithPseudoRandomVectors[g].GridIndex)
-						{
-							BPos = GridWithPseudoRandomVectors[g].PixelPos;
-							BPseudoVector2D = (GridWithPseudoRandomVectors[g].GridPseudoRandomVector).GetSafeNormal();
-						}
-						if(CurrentRightTopIndex == GridWithPseudoRandomVectors[g].GridIndex)
-						{
-							CPos = GridWithPseudoRandomVectors[g].PixelPos;
-							CPseudoVector2D = (GridWithPseudoRandomVectors[g].GridPseudoRandomVector).GetSafeNormal();
-						}
-					}
-
-					FVector2D PPos = FVector2D(i,j);
-					FVector2D AP = (PPos - APos).GetSafeNormal();
-					FVector2D BP = (PPos - BPos).GetSafeNormal();
-					FVector2D CP = (PPos - CPos).GetSafeNormal();
-					FVector2D DP = (PPos - DPos).GetSafeNormal();
-
-					float ADotProduct = FVector2D::DotProduct(AP,APseudoVector2D);
-					float BDotProduct = FVector2D::DotProduct(BP,BPseudoVector2D);
-					float CDotProduct = FVector2D::DotProduct(CP,CPseudoVector2D);
-					float DDotProduct = FVector2D::DotProduct(DP,DPseudoVector2D);
-
-					float temp0 = PerlinNoiseLerp(ADotProduct, DDotProduct, ProportionInCurrentGrid.X);
-					float temp1 = PerlinNoiseLerp(BDotProduct, CDotProduct, ProportionInCurrentGrid.X);
-					float noiseValue = PerlinNoiseLerp(temp0, temp1, ProportionInCurrentGrid.Y);
-					noiseValue = (noiseValue + 1.0) / 2.0;
-					UE_LOG(LogTemp, Log, TEXT("Pixel Position (%d, %d) - Noise Value: %f"), i, j, noiseValue);
-					const FColor PixelDrawCol = FColor(noiseValue* 255, noiseValue* 255,noiseValue* 255, 255);
-					const FColor PixelColor = PixelDrawCol;
-					FormatedImageDataOut[(j * Width) + i] = PixelColor;
-					
-				}
+				frequency *= 2; 
+				strength /= 2; 
 			}
 
+			NoiseValue = FMath::Clamp(NoiseValue,0.0f,1.0f);
+
+			FColor PixelColor = FColor(NoiseValue * 255, NoiseValue * 255, NoiseValue * 255, 255);
+			FormatedImageDataOut[(j * Width) + i] = PixelColor;
+
+			UE_LOG(LogTemp, Log, TEXT("NoiseValue at (%d, %d): %f"), i, j, NoiseValue);
 			
 			
-			
+	
+
+
 		}
 	}
 
@@ -269,6 +263,7 @@ void UMyBlueprintFunctionLibrary::PerlinNoiseCalculation(UTexture2D* Texture2D, 
 	Texture2D->UpdateResource();
 	
 }
+
 
 void UMyBlueprintFunctionLibrary::InitializeClosestCellVoronoiSeedXY(UTexture2D* Texture2D)
 {

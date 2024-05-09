@@ -43,7 +43,7 @@ void ATexture2DGeneration::BeginPlay()
 	//clear texture2d
 	UMyBlueprintFunctionLibrary::ClearTexture2D(pTexture, FColor::Black);
 
-	UMyBlueprintFunctionLibrary::PerlinNoiseCalculation(pTexture, 10);
+	UMyBlueprintFunctionLibrary::FractualBrownMotion(3, 4, 1,pTexture);
 
 
 	
@@ -70,7 +70,7 @@ void ATexture2DGeneration::ResetParameters()
 {
 	//
 	UMyBlueprintFunctionLibrary::SetTextureResolution(TextureResolutionInX, TextureResolutionInY);
-	UMyBlueprintFunctionLibrary::SetVoronoiSeed(AOffset,BOffset);
+	UMyBlueprintFunctionLibrary::SetVoronoiAndPerlinSeed(AOffset,BOffset,PerlinNoiseSeed);
 	UMyBlueprintFunctionLibrary::SetRoadWidth(RoadWidth);
 	UMyBlueprintFunctionLibrary::SetCellCount(CellCount);
 	//normal distribution

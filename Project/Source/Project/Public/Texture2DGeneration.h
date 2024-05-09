@@ -59,7 +59,7 @@ protected:
 
 	// cell count
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "VoronoiScale")
-	int CellCount = 20;
+	int CellCount = 16;
 
 	//road width
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "RoadWidth")
@@ -67,7 +67,11 @@ protected:
 
 	//resolution
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "TextureResolution")
-	int32 TextureResolutionInX = 200;
+	int32 TextureResolutionInX = 512;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "TextureResolution")
-	int32 TextureResolutionInY = 200;
+	int32 TextureResolutionInY = 512;
+
+	//
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "PerlinNoiseSeed")
+	int32 PerlinNoiseSeed = 15;
 };
