@@ -9,5 +9,5 @@ void AMyHUD::DrawHUD()
 {
 	Super::DrawHUD();
 	APlayerController* PlayerController = GetWorld()->GetFirstPlayerController();
-	UMyBlueprintFunctionLibrary::DrawVertexPositionsAndCellNumbersOnHUD(this, PlayerController);
+	//UMyBlueprintFunctionLibrary::DrawVertexPositionsAndCellNumbersOnHUD(this, PlayerController);
 }

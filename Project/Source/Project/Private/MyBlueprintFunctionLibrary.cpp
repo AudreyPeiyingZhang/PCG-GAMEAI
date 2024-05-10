@@ -238,11 +238,12 @@ void UMyBlueprintFunctionLibrary::FractualBrownMotion(int32 octaves, int32 initi
 
 			for (int32 k = 0; k < octaves; k++)
 			{
+				strength /= 2; 
 				float layerNoise = PerlinNoiseCalculation(Texture2D, frequency, PerlinNoiseSeed + frequency, FVector2D(i, j));
 				NoiseValue += layerNoise * strength;
 
 				frequency *= 2; 
-				strength /= 2; 
+				
 			}
 
 			NoiseValue = FMath::Clamp(NoiseValue,0.0f,1.0f);
@@ -1506,7 +1507,7 @@ FVector UMyBlueprintFunctionLibrary::CalculateBisector(FVector VtxA, FVector Vtx
 	
 }
 
-void UMyBlueprintFunctionLibrary::TriangleFanSubdivide(FVertexData PreVtx, FVertexData NextNextVtx, TArray<int32> VtxIndex, TArray<FVertexData> VtxData)
+void UMyBlueprintFunctionLibrary::TriangleFanSubdivide(FVertexData PreVtx, FVertexData NextNextVtx, TArray<int32> VtxIndex, TArray<FVertexData> VtxData, bool IsEdge)
 {
 	TArray<int32> TwoBase;
 	TwoBase.Empty();
@@ -1530,6 +1531,10 @@ void UMyBlueprintFunctionLibrary::TriangleFanSubdivide(FVertexData PreVtx, FVert
 	FVector2D MidBetweenCenterAndFirstVtxUV0 = FVector2D(1*FirstProjectionLength,1*Dist1);
 	FVector2D MidBetweenCenterAndFirstVtxUV1 = FVector2D(MidBetweenCenterAndFirstVtxPos.X/UVScale, MidBetweenCenterAndFirstVtxPos.Y/UVScale);
 	FVector2D MidBetweenCenterAndFirstVtxUV2 = FVector2D(0,0);
+	if(IsEdge)
+	{
+		MidBetweenCenterAndFirstVtxUV2 = FVector2D(1.5,0);
+	}
 	FVertexData MidBetweenCenterAndFirstVtxData(MidBetweenCenterAndFirstVtxPos, 0, MidBetweenCenterAndFirstVtxUV0, MidBetweenCenterAndFirstVtxUV1, MidBetweenCenterAndFirstVtxUV2, MidBetweenCenterAndFirstVtxNormal);
 	MidBetweenCenterAndFirstVtxData.VtxIndex = AddVertex(MidBetweenCenterAndFirstVtxData);
 
@@ -1545,6 +1550,10 @@ void UMyBlueprintFunctionLibrary::TriangleFanSubdivide(FVertexData PreVtx, FVert
 	FVector2D MidBetweenCenterAndSecondVtxUV0 = FVector2D(BaseLength2 -1*SecondProjectionLength,1*Dist2);
 	FVector2D MidBetweenCenterAndSecondVtxUV1 = FVector2D(MidBetweenCenterAndSecondVtxPos.X/UVScale, MidBetweenCenterAndSecondVtxPos.Y/UVScale);
 	FVector2D MidBetweenCenterAndSecondVtxUV2 = FVector2D(0,0);
+	if(IsEdge)
+	{
+		MidBetweenCenterAndSecondVtxUV2 = FVector2D(1.5,0);
+	}
 	FVertexData MidBetweenCenterAndSecondVtxData(MidBetweenCenterAndSecondVtxPos, 0,MidBetweenCenterAndSecondVtxUV0,MidBetweenCenterAndSecondVtxUV1, MidBetweenCenterAndSecondVtxUV2,MidBetweenCenterAndSecondVtxNormal);
 	MidBetweenCenterAndSecondVtxData.VtxIndex = AddVertex(MidBetweenCenterAndSecondVtxData);
 	
@@ -1600,8 +1609,13 @@ void UMyBlueprintFunctionLibrary::TriangleFanSubdivide(FVertexData PreVtx, FVert
 	VertexForExtrude.Add(VtxData[0]);
 	VertexForExtrude.Add(MidBetweenCenterAndFirstVtxData);
 	VertexForExtrude.Add(MidBetweenCenterAndSecondVtxData);
+
+	//if it not beach, dont create building
+	if(!IsEdge)
+	{
+		ExtrudePolygon(TopTriangle,VertexForExtrude,ExtrudeTriangles);
+	}
 	
-	ExtrudePolygon(TopTriangle,VertexForExtrude,ExtrudeTriangles);
 	
 	AllTriangles.Append(ExtrudeTriangles);
 
@@ -1635,18 +1649,58 @@ void UMyBlueprintFunctionLibrary::CreateVoronoiShapePolygon(UProceduralMeshCompo
 	UV2.Empty();
 	Normal.Empty();
 
+	//this array to store the vtx that are not the beach edge to sea, but the edge between road and beach
+	TArray<FVector> BeachInnerVtx;
+	BeachInnerVtx.Empty();
+
 	
 
 	for(FCellStruct& CurrentCell : Cells)
 	{
+		bool IsThisCellOnEdge = false;
 
+		
+		
+		//check if the cell on the edge, make the beach
+		for(int i =0;i<CurrentCell.VerticesPosition.Num(); i++)
+		{
+
+			if(CurrentCell.VerticesPosition[i].X== 1||CurrentCell.VerticesPosition[i].X== TextureResolutionInX-2 ||CurrentCell.VerticesPosition[i].Y ==1 || CurrentCell.VerticesPosition[i].Y ==TextureResolutionInY -2 )
+			{
+				IsThisCellOnEdge =  true;
+				//create slope
+				CurrentCell.VerticesPosition[i].Z -= 5.0f;
+			}
+			
+		}
+		//add beach vtx between road and beach
+		if(IsThisCellOnEdge)
+		{
+			for(int i =0;i<CurrentCell.VerticesPosition.Num(); i++)
+			{
+
+				if(CurrentCell.VerticesPosition[i].X!= 1&&CurrentCell.VerticesPosition[i].X!= TextureResolutionInX-2&&CurrentCell.VerticesPosition[i].Y !=1 && CurrentCell.VerticesPosition[i].Y !=TextureResolutionInY -2 )
+				{
+					BeachInnerVtx.Add(CurrentCell.VerticesPosition[i]);
+					
+				}
+			
+			}
+		}
+		
+
+		
 		//get center point 
 		FVector CentroidPos = CurrentCell.CalculateCentroid();
 		FVector CenterNormal(0, 0, 1); 
 		FVector2D CenterUV0(0.0f, 0.0f); 
 		FVector2D CenterUV1(CentroidPos.X / UVScale, CentroidPos.Y / UVScale);
 		//road
-		FVector2D CenterUV2(0, 0); 
+		FVector2D CenterUV2(0, 0);
+		if(IsThisCellOnEdge)
+		{
+			CenterUV2 = FVector2D(1.5,0);
+		}
 		
 		FVertexData CentroidVertexData(CentroidPos,0, CenterUV0,CenterUV1,CenterUV2, CenterNormal );
 		CentroidVertexData.VtxIndex = AddVertex(CentroidVertexData);
@@ -1662,25 +1716,30 @@ void UMyBlueprintFunctionLibrary::CreateVoronoiShapePolygon(UProceduralMeshCompo
 			FVector VtxNormal(0, 0, 1); 
 			FVector2D VtxUV0(0.0f, 0.0f); 
 			FVector2D VtxUV1(VtxPos.X / UVScale, VtxPos.Y / UVScale); 
-			FVector2D VtxUV2(0, 0); 
+			FVector2D VtxUV2(0, 0);
+			if(IsThisCellOnEdge)
+			{
+				VtxUV2 = FVector2D(1.5,0);
+			}
 
 			FVertexData CurrentVtxData(VtxPos, 0, VtxUV0, VtxUV1, VtxUV2, VtxNormal);
 			CurrentVtxData.VtxIndex = AddVertex(CurrentVtxData);
 			CellVerticesData.Add(CurrentVtxData);
 			
-			
 		}
 		
 		//check winding order
 		CheckWindingOrder(CellVerticesData, EPlane::XY);
+
+		
 		
 		//for each triangle
 		for(int i =0;i<CellVerticesData.Num();i++)
 		{
 			TArray<FVertexData> SingleTriangleData;
 			SingleTriangleData.Empty();
-			const FVertexData CenterVtxData = CentroidVertexData;
-			const FVertexData FirstVtxData = CellVerticesData[i];
+			FVertexData CenterVtxData = CentroidVertexData;
+			FVertexData FirstVtxData = CellVerticesData[i];
 			FVertexData NextVtxData = CellVerticesData[(i+1)%CellVerticesData.Num()];
 
 			//to calculate the bisectors
@@ -1694,6 +1753,7 @@ void UMyBlueprintFunctionLibrary::CreateVoronoiShapePolygon(UProceduralMeshCompo
 				NextVtxData.VtxUV0 = FVector2D(1*Dist,0.0f);
 				NextVtxData.VtxIndex = AddVertex(NextVtxData);
 			}
+			
 			SingleTriangleData.Add(CenterVtxData);
 			SingleTriangleData.Add(FirstVtxData);
 			SingleTriangleData.Add(NextVtxData);
@@ -1709,11 +1769,12 @@ void UMyBlueprintFunctionLibrary::CreateVoronoiShapePolygon(UProceduralMeshCompo
 			SingleTriangleIndex.Add(NextVtxIndex);
 
 
-			TriangleFanSubdivide(PrevVtxData, NextNextVtxData,SingleTriangleIndex,SingleTriangleData);
+			TriangleFanSubdivide(PrevVtxData, NextNextVtxData,SingleTriangleIndex,SingleTriangleData,IsThisCellOnEdge);
 			
 		}
 	}
-	
+	//blend uv2 from road to beach
+	AdjustNearCellUV2ToMakeBeach(BeachInnerVtx);
 	ProceduralMesh->CreateMeshSection(0, WholeVertices, Triangles, Normal, UV0,UV1,UV2,UV0, TArray<FColor>(), TArray<FProcMeshTangent>(), true);
 	
 	if (MaterialInstance)
@@ -1722,6 +1783,21 @@ void UMyBlueprintFunctionLibrary::CreateVoronoiShapePolygon(UProceduralMeshCompo
 	}
 	
 }
+
+void UMyBlueprintFunctionLibrary::AdjustNearCellUV2ToMakeBeach(TArray<FVector> vtx)
+{
+	for(int i =0; i<WholeVertices.Num();i++)
+	{
+		for(int j =0; j <vtx.Num(); j++)
+		{
+			if(WholeVertices[i] == vtx[j])
+			{
+				UV2[i]= FVector2D(1.5,0);
+			}
+		}
+	}
+}
+
 
 void UMyBlueprintFunctionLibrary::ClearAllArrays()
 {

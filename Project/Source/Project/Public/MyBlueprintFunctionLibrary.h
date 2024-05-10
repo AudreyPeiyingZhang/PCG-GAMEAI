@@ -406,7 +406,7 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Polygons Calculation")
 	static void CreateVoronoiShapePolygon(UProceduralMeshComponent* ProceduralMesh, UMaterialInterface* MaterialInstance);
 	UFUNCTION(BlueprintCallable, Category = "Polygons Calculation")
-	static void TriangleFanSubdivide(FVertexData PreVtx, FVertexData NextNextVtx,TArray<int32> VtxIndex,TArray<FVertexData> VtxData);
+	static void TriangleFanSubdivide(FVertexData PreVtx, FVertexData NextNextVtx,TArray<int32> VtxIndex,TArray<FVertexData> VtxData, bool IsEdge);
 	UFUNCTION(BlueprintCallable, Category = "Polygons Calculation")
 	static FVector CalculateBisector(FVector VtxA, FVector VtxB, FVector VtxC);
 	UFUNCTION(BlueprintCallable, Category = "Polygons Calculation")
@@ -425,6 +425,8 @@ public:
 	static FVector RoundVector(FVector Vec, float Precision = 0.001f);
 	UFUNCTION(BlueprintCallable, Category = "Polygons Calculation")
 	static void ExtrudePolygon(TArray<int32> BaseTriangle, TArray<FVertexData> BaseVtxData,TArray<int32>& ExtrudeTriangles);
+	UFUNCTION(BlueprintCallable, Category = "Polygons Calculation")
+	static void AdjustNearCellUV2ToMakeBeach(TArray<FVector> vtx);
 	UFUNCTION(BlueprintCallable, Category = "Normal Distribution")
 	static float UseNormalDistributionToGetBuildingHeight(FVector2D CurrentPos);
 

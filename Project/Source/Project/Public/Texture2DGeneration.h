@@ -47,9 +47,9 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Building")
 	FVector2D CenterPos = FVector2D(100,100);
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Building")
-	float SigmaX = 45.0f;
+	float SigmaX = 50.0f;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Building")
-	float SigmaY = 45.0f;
+	float SigmaY = 50.0f;
 	//voronoi seed
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "VoronoiSeed")
 	float AOffset = 9.45;
@@ -67,9 +67,9 @@ protected:
 
 	//resolution
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "TextureResolution")
-	int32 TextureResolutionInX = 512;
+	int32 TextureResolutionInX = 256;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "TextureResolution")
-	int32 TextureResolutionInY = 512;
+	int32 TextureResolutionInY = 256;
 
 	//
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "PerlinNoiseSeed")

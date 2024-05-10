@@ -33,17 +33,17 @@ void ATexture2DGeneration::BeginPlay()
 
 	Plane->SetWorldLocation(FVector(100.0f,100.0f,-1.0f));
 	//create texture2d
-	ResetParameters();
-	pTexture = UMyBlueprintFunctionLibrary::CreateTexture2D();
+	//ResetParameters();
+	//pTexture = UMyBlueprintFunctionLibrary::CreateTexture2D();
 	//set texture to material
-	MaterialInstance = UMaterialInstanceDynamic::Create(MaterialInterface, this);
-	MaterialInstance->SetTextureParameterValue(FName("BaseTexture"), pTexture);
+	//MaterialInstance = UMaterialInstanceDynamic::Create(MaterialInterface, this);
+	//MaterialInstance->SetTextureParameterValue(FName("BaseTexture"), pTexture);
 	//set material to object
-	Plane->SetMaterial(0, MaterialInstance);
+	//Plane->SetMaterial(0, MaterialInstance);
 	//clear texture2d
-	UMyBlueprintFunctionLibrary::ClearTexture2D(pTexture, FColor::Black);
+	//UMyBlueprintFunctionLibrary::ClearTexture2D(pTexture, FColor::Black);
 
-	UMyBlueprintFunctionLibrary::FractualBrownMotion(3, 4, 1,pTexture);
+	//UMyBlueprintFunctionLibrary::FractualBrownMotion(3, 4, 1,pTexture);
 
 
 	
