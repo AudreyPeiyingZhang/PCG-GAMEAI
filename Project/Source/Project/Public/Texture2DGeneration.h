@@ -65,6 +65,10 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "RoadWidth")
 	float RoadWidth = 1.0f;
 
+	//pavement width
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "PavementWidth")
+	float PavementWidth = RoadWidth/3;
+
 	//resolution
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "TextureResolution")
 	int32 TextureResolutionInX = 256;

@@ -155,6 +155,7 @@ float UMyBlueprintFunctionLibrary::BOffset;
 float UMyBlueprintFunctionLibrary::BAmplitude;
 int32 UMyBlueprintFunctionLibrary::CellCount;
 float UMyBlueprintFunctionLibrary::RoadWidth;
+float UMyBlueprintFunctionLibrary::PavementWidth;
 int32 UMyBlueprintFunctionLibrary::TextureResolutionInX;
 int32 UMyBlueprintFunctionLibrary::TextureResolutionInY;
 int32 UMyBlueprintFunctionLibrary::PerlinNoiseSeed;
@@ -1252,6 +1253,11 @@ void UMyBlueprintFunctionLibrary::SetRoadWidth(float roadWidth)
 	RoadWidth = roadWidth;
 }
 
+void UMyBlueprintFunctionLibrary::SetPavementWidth(float pavementWidth)
+{
+	PavementWidth = pavementWidth;
+}
+
 float UMyBlueprintFunctionLibrary::UseNormalDistributionToGetBuildingHeight(FVector2D CurrentPos)
 {
 	const float exponent = FMath::Exp(-(FMath::Square(CurrentPos.X - CityCenterPos.X) / (2 * SigmaX * SigmaX) 
@@ -1471,7 +1477,7 @@ void UMyBlueprintFunctionLibrary::ExtrudePolygon(TArray<int32> BaseTriangle, TAr
 	
 }
 
-FVector UMyBlueprintFunctionLibrary::CalculateBisector(FVector VtxA, FVector VtxB, FVector VtxC)
+FVector UMyBlueprintFunctionLibrary::CalculateBisector(FVector VtxA, FVector VtxB, FVector VtxC, bool IsFirstSubdivide)
 {
 	
 	const FVector DirBA = (VtxA - VtxB).GetSafeNormal();
@@ -1496,7 +1502,11 @@ FVector UMyBlueprintFunctionLibrary::CalculateBisector(FVector VtxA, FVector Vtx
 	}
 	const float Angle = FMath::Acos(FMath::Clamp(DotProduct, -1.0f, 1.0f));
 	const float HalfAngle = Angle/2;
-	const float Length = RoadWidth/FMath::Sin(HalfAngle);
+	float Length = RoadWidth/FMath::Sin(HalfAngle);
+	if(!IsFirstSubdivide)
+	{
+		Length = (PavementWidth+RoadWidth)/FMath::Sin(HalfAngle);
+	}
 
 	const FVector BisectorWithLength = BiSector * Length + VtxB;
 	UE_LOG(LogTemp, Log, TEXT("DirBA: %s, DirBC: %s, BiSector: %s, Angle: %f, HalfAngle: %f, Length: %f, BisctorWithLenghth: %s"),
@@ -1504,10 +1514,10 @@ FVector UMyBlueprintFunctionLibrary::CalculateBisector(FVector VtxA, FVector Vtx
 	
 	return BisectorWithLength;
 	
-	
+	 
 }
 
-void UMyBlueprintFunctionLibrary::TriangleFanSubdivide(FVertexData PreVtx, FVertexData NextNextVtx, TArray<int32> VtxIndex, TArray<FVertexData> VtxData, bool IsEdge)
+void UMyBlueprintFunctionLibrary::TriangleFanSecondSubdivide(FVector Pos1, FVector Pos2, TArray<int32> VtxIndex, TArray<FVertexData> VtxData, bool IsEdge, TArray<int32>& MidLeftTriangle, TArray<int32>& MidRightTriangle, TArray<int32>& TopTriangleToExtrude, TArray<FVertexData>& TopTriangleDataToExtrude)
 {
 	TArray<int32> TwoBase;
 	TwoBase.Empty();
@@ -1520,15 +1530,111 @@ void UMyBlueprintFunctionLibrary::TriangleFanSubdivide(FVertexData PreVtx, FVert
 	const FVector SecondPos = VtxData[2].VtxPos;
 
 	//mid first and center
-	FVector MidBetweenCenterAndFirstVtxPos = CalculateBisector(PreVtx.VtxPos,FirstPos,SecondPos);
+	FVector MidBetweenCenterAndFirstVtxPos = Pos1;
 	FVector MidBetweenCenterAndFirstVtxNormal = FVector(0,0,1);
 	FVector V0 = MidBetweenCenterAndFirstVtxPos - FirstPos;
 	FVector V1 = SecondPos - FirstPos;
 	float DotProduct = FVector::DotProduct(V0, V1);
 	float BaseLength = V1.Length();
 	float FirstProjectionLength = DotProduct / BaseLength;
-	float Dist1 =FMath::Sqrt(FMath::Pow((MidBetweenCenterAndFirstVtxPos-FirstPos).Length(), 2) - FMath::Pow(FirstProjectionLength ,2));
-	FVector2D MidBetweenCenterAndFirstVtxUV0 = FVector2D(1*FirstProjectionLength,1*Dist1);
+	//float Dist1 =FMath::Sqrt(FMath::Pow((MidBetweenCenterAndFirstVtxPos-FirstPos).Length(), 2) - FMath::Pow(FirstProjectionLength ,2));
+	FVector2D MidBetweenCenterAndFirstVtxUV0 = FVector2D(1*FirstProjectionLength,1);
+	FVector2D MidBetweenCenterAndFirstVtxUV1 = FVector2D(MidBetweenCenterAndFirstVtxPos.X/UVScale, MidBetweenCenterAndFirstVtxPos.Y/UVScale);
+	FVector2D MidBetweenCenterAndFirstVtxUV2 = FVector2D(2.0,0);
+	if(IsEdge)
+	{
+		MidBetweenCenterAndFirstVtxUV2 = FVector2D(1.5,0);
+	}
+	FVertexData MidBetweenCenterAndFirstVtxData(MidBetweenCenterAndFirstVtxPos, 0, MidBetweenCenterAndFirstVtxUV0, MidBetweenCenterAndFirstVtxUV1, MidBetweenCenterAndFirstVtxUV2, MidBetweenCenterAndFirstVtxNormal);
+	MidBetweenCenterAndFirstVtxData.VtxIndex = AddVertex(MidBetweenCenterAndFirstVtxData);
+
+	//mid second and center
+	FVector MidBetweenCenterAndSecondVtxPos = Pos2;
+	FVector MidBetweenCenterAndSecondVtxNormal = FVector(0,0,1);
+	FVector V2 = MidBetweenCenterAndSecondVtxPos - SecondPos;
+	FVector V3 = FirstPos - SecondPos;
+	float DotProduct1 = FVector::DotProduct(V2, V3);
+	float BaseLength2 = V3.Length();
+	float SecondProjectionLength = DotProduct1 / BaseLength2;
+	//float Dist2 =FMath::Sqrt(FMath::Pow((MidBetweenCenterAndSecondVtxPos-SecondPos).Length(), 2) - FMath::Pow(SecondProjectionLength,2));
+	FVector2D MidBetweenCenterAndSecondVtxUV0 = FVector2D(BaseLength2 -1*SecondProjectionLength,1);
+	FVector2D MidBetweenCenterAndSecondVtxUV1 = FVector2D(MidBetweenCenterAndSecondVtxPos.X/UVScale, MidBetweenCenterAndSecondVtxPos.Y/UVScale);
+	FVector2D MidBetweenCenterAndSecondVtxUV2 = FVector2D(2.0,0);
+	if(IsEdge)
+	{
+		MidBetweenCenterAndSecondVtxUV2 = FVector2D(1.5,0);
+	}
+	FVertexData MidBetweenCenterAndSecondVtxData(MidBetweenCenterAndSecondVtxPos, 0,MidBetweenCenterAndSecondVtxUV0,MidBetweenCenterAndSecondVtxUV1, MidBetweenCenterAndSecondVtxUV2,MidBetweenCenterAndSecondVtxNormal);
+	MidBetweenCenterAndSecondVtxData.VtxIndex = AddVertex(MidBetweenCenterAndSecondVtxData);
+	
+	
+	//change uv2
+	FVertexData BaseLeftVtxData = VtxData[1];
+	BaseLeftVtxData.VtxUV0 = FVector2D(0.0,0.0);
+	BaseLeftVtxData.VtxUV2 = FVector2D(2.0, 0);
+	BaseLeftVtxData.VtxIndex = AddVertex(BaseLeftVtxData);
+	TwoBase.Add(BaseLeftVtxData.VtxIndex);
+
+	FVertexData BaseRightVtxData = VtxData[2];
+	BaseRightVtxData.VtxUV0 = FVector2D(1.0,0.0);
+	BaseRightVtxData.VtxUV2 = FVector2D(2.0, 0);
+	BaseRightVtxData.VtxIndex = AddVertex(BaseRightVtxData);
+	TwoBase.Add(BaseRightVtxData.VtxIndex);
+	
+
+	TwoMid.Add(MidBetweenCenterAndFirstVtxData.VtxIndex);
+	TwoMid.Add(MidBetweenCenterAndSecondVtxData.VtxIndex);
+	
+	//
+
+	TopTriangleToExtrude.Empty();
+
+	TopTriangleToExtrude.Add(VtxIndex[0]);
+	TopTriangleToExtrude.Add(MidBetweenCenterAndFirstVtxData.VtxIndex);
+	TopTriangleToExtrude.Add(MidBetweenCenterAndSecondVtxData.VtxIndex);
+
+	TopTriangleDataToExtrude.Empty();
+	TopTriangleDataToExtrude.Add(VtxData[0]);
+	TopTriangleDataToExtrude.Add(MidBetweenCenterAndFirstVtxData);
+	TopTriangleDataToExtrude.Add(MidBetweenCenterAndSecondVtxData);
+
+	
+
+	//
+	MidLeftTriangle.Empty();
+	
+	MidRightTriangle.Empty();
+
+	
+
+	//create quad
+	
+	DivideQuadIntoTriangle(TwoBase, TwoMid, MidLeftTriangle,MidRightTriangle);
+
+}
+
+void UMyBlueprintFunctionLibrary::TriangleFanFirstSubdivide(FVertexData PreVtx, FVertexData NextNextVtx, TArray<int32> VtxIndex, TArray<FVertexData> VtxData, bool IsEdge)
+{
+	TArray<int32> TwoBase;
+	TwoBase.Empty();
+	
+	TArray<int32> TwoMid;
+	TwoMid.Empty();
+
+	const FVector CenterPos = VtxData[0].VtxPos;
+	const FVector FirstPos = VtxData[1].VtxPos;
+	const FVector SecondPos = VtxData[2].VtxPos;
+
+	//mid first and center
+	FVector MidBetweenCenterAndFirstVtxPos = CalculateBisector(PreVtx.VtxPos,FirstPos,SecondPos, true);
+	FVector MidBetweenCenterAndFirstVtxNormal = FVector(0,0,1);
+	FVector V0 = MidBetweenCenterAndFirstVtxPos - FirstPos;
+	FVector V1 = SecondPos - FirstPos;
+	float DotProduct = FVector::DotProduct(V0, V1);
+	float BaseLength = V1.Length();
+	float FirstProjectionLength = DotProduct / BaseLength;
+	//float Dist1 =FMath::Sqrt(FMath::Pow((MidBetweenCenterAndFirstVtxPos-FirstPos).Length(), 2) - FMath::Pow(FirstProjectionLength ,2));
+	FVector2D MidBetweenCenterAndFirstVtxUV0 = FVector2D(1*FirstProjectionLength,1);
 	FVector2D MidBetweenCenterAndFirstVtxUV1 = FVector2D(MidBetweenCenterAndFirstVtxPos.X/UVScale, MidBetweenCenterAndFirstVtxPos.Y/UVScale);
 	FVector2D MidBetweenCenterAndFirstVtxUV2 = FVector2D(0,0);
 	if(IsEdge)
@@ -1539,15 +1645,15 @@ void UMyBlueprintFunctionLibrary::TriangleFanSubdivide(FVertexData PreVtx, FVert
 	MidBetweenCenterAndFirstVtxData.VtxIndex = AddVertex(MidBetweenCenterAndFirstVtxData);
 
 	//mid second and center
-	FVector MidBetweenCenterAndSecondVtxPos = CalculateBisector(FirstPos, SecondPos, NextNextVtx.VtxPos);
+	FVector MidBetweenCenterAndSecondVtxPos = CalculateBisector(FirstPos, SecondPos, NextNextVtx.VtxPos, true);
 	FVector MidBetweenCenterAndSecondVtxNormal = FVector(0,0,1);
 	FVector V2 = MidBetweenCenterAndSecondVtxPos - SecondPos;
 	FVector V3 = FirstPos - SecondPos;
 	float DotProduct1 = FVector::DotProduct(V2, V3);
 	float BaseLength2 = V3.Length();
 	float SecondProjectionLength = DotProduct1 / BaseLength2;
-	float Dist2 =FMath::Sqrt(FMath::Pow((MidBetweenCenterAndSecondVtxPos-SecondPos).Length(), 2) - FMath::Pow(SecondProjectionLength,2));
-	FVector2D MidBetweenCenterAndSecondVtxUV0 = FVector2D(BaseLength2 -1*SecondProjectionLength,1*Dist2);
+	//float Dist2 =FMath::Sqrt(FMath::Pow((MidBetweenCenterAndSecondVtxPos-SecondPos).Length(), 2) - FMath::Pow(SecondProjectionLength,2));
+	FVector2D MidBetweenCenterAndSecondVtxUV0 = FVector2D(BaseLength2 -1*SecondProjectionLength,1);
 	FVector2D MidBetweenCenterAndSecondVtxUV1 = FVector2D(MidBetweenCenterAndSecondVtxPos.X/UVScale, MidBetweenCenterAndSecondVtxPos.Y/UVScale);
 	FVector2D MidBetweenCenterAndSecondVtxUV2 = FVector2D(0,0);
 	if(IsEdge)
@@ -1570,13 +1676,19 @@ void UMyBlueprintFunctionLibrary::TriangleFanSubdivide(FVertexData PreVtx, FVert
 	TArray<int32> AllTriangles;
 	AllTriangles.Empty();
 	
-	//
+	//deliver to subdivide 2
 	TArray<int32> TopTriangle;
 	TopTriangle.Empty();
 
 	TopTriangle.Add(VtxIndex[0]);
 	TopTriangle.Add(MidBetweenCenterAndFirstVtxData.VtxIndex);
 	TopTriangle.Add(MidBetweenCenterAndSecondVtxData.VtxIndex);
+
+	TArray<FVertexData> TopTriangleVtxData;
+	TopTriangleVtxData.Empty();
+	TopTriangleVtxData.Add(VtxData[0]);
+	TopTriangleVtxData.Add(MidBetweenCenterAndFirstVtxData);
+	TopTriangleVtxData.Add(MidBetweenCenterAndSecondVtxData);
 	
 
 	
@@ -1596,24 +1708,41 @@ void UMyBlueprintFunctionLibrary::TriangleFanSubdivide(FVertexData PreVtx, FVert
 
 
 	//
-	AllTriangles.Append(TopTriangle);
+	//AllTriangles.Append(TopTriangle);
 	AllTriangles.Append(DownLeftTriangle);
 	AllTriangles.Append(DownRightTriangle);
 
+	//subdivide 2
+	TArray<int32> TopTriangleExtrude;
+	TopTriangleExtrude.Empty();
+	TArray<int32> MiddleLeftTriangle;
+	MiddleLeftTriangle.Empty();
+	TArray<int32> MiddleRightTriangle;
+	MiddleRightTriangle.Empty();
+	TArray<FVertexData> VertexDataToExtrude;
+	VertexDataToExtrude.Empty();
+	
+
+	//set up midpoint pos for the subdivide 2
+	FVector LeftVtxPos = CalculateBisector(PreVtx.VtxPos,FirstPos,SecondPos, false);
+	FVector RightVtxPos = CalculateBisector(FirstPos, SecondPos, NextNextVtx.VtxPos,  false);
+	TriangleFanSecondSubdivide(LeftVtxPos, RightVtxPos, TopTriangle, TopTriangleVtxData, IsEdge, MiddleLeftTriangle, MiddleRightTriangle,TopTriangleExtrude, VertexDataToExtrude);
+
+	//add triangles
+	AllTriangles.Append(TopTriangleExtrude);
+	AllTriangles.Append(MiddleLeftTriangle);
+	AllTriangles.Append(MiddleRightTriangle);
+	
+	
 	TArray<int32> ExtrudeTriangles;
 	ExtrudeTriangles.Empty();
 
 
-	TArray<FVertexData> VertexForExtrude;
-	VertexForExtrude.Empty();
-	VertexForExtrude.Add(VtxData[0]);
-	VertexForExtrude.Add(MidBetweenCenterAndFirstVtxData);
-	VertexForExtrude.Add(MidBetweenCenterAndSecondVtxData);
 
 	//if it not beach, dont create building
 	if(!IsEdge)
 	{
-		ExtrudePolygon(TopTriangle,VertexForExtrude,ExtrudeTriangles);
+		ExtrudePolygon(TopTriangleExtrude,VertexDataToExtrude,ExtrudeTriangles);
 	}
 	
 	
@@ -1769,7 +1898,7 @@ void UMyBlueprintFunctionLibrary::CreateVoronoiShapePolygon(UProceduralMeshCompo
 			SingleTriangleIndex.Add(NextVtxIndex);
 
 
-			TriangleFanSubdivide(PrevVtxData, NextNextVtxData,SingleTriangleIndex,SingleTriangleData,IsThisCellOnEdge);
+			TriangleFanFirstSubdivide(PrevVtxData, NextNextVtxData,SingleTriangleIndex,SingleTriangleData,IsThisCellOnEdge);
 			
 		}
 	}

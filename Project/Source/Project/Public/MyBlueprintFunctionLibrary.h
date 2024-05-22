@@ -285,6 +285,7 @@ public:
 	// World UV
 	FVector2D VtxUV1;
 	// Distinguish UV Channel
+	//road(0 ,0),building(0.5 ,0), roof(1.0 ,0), beach(1.5, 0), pavement(2.0, 0)
 	FVector2D VtxUV2;
 	// Normal
 	FVector VtxNormal;
@@ -406,9 +407,11 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Polygons Calculation")
 	static void CreateVoronoiShapePolygon(UProceduralMeshComponent* ProceduralMesh, UMaterialInterface* MaterialInstance);
 	UFUNCTION(BlueprintCallable, Category = "Polygons Calculation")
-	static void TriangleFanSubdivide(FVertexData PreVtx, FVertexData NextNextVtx,TArray<int32> VtxIndex,TArray<FVertexData> VtxData, bool IsEdge);
+	static void TriangleFanFirstSubdivide(FVertexData PreVtx, FVertexData NextNextVtx,TArray<int32> VtxIndex,TArray<FVertexData> VtxData, bool IsEdge);
 	UFUNCTION(BlueprintCallable, Category = "Polygons Calculation")
-	static FVector CalculateBisector(FVector VtxA, FVector VtxB, FVector VtxC);
+	static void TriangleFanSecondSubdivide(FVector Pos1, FVector Pos2,TArray<int32> VtxIndex,TArray<FVertexData> VtxData, bool IsEdge, TArray<int32>& MidLeftTriangle, TArray<int32>& MidRightTriangle, TArray<int32>& TopTriangleToExtrude, TArray<FVertexData>& TopTriangleDataToExtrude);
+	UFUNCTION(BlueprintCallable, Category = "Polygons Calculation")
+	static FVector CalculateBisector(FVector VtxA, FVector VtxB, FVector VtxC, bool IsFirstSubdivide);
 	UFUNCTION(BlueprintCallable, Category = "Polygons Calculation")
 	static FVector FindKeyByValue(const TMap<FVector, int32>& Map, int32 ValueToFind);
 	UFUNCTION(BlueprintCallable, Category = "Polygons Calculation")
@@ -442,6 +445,10 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Set Road Width")
 	static void SetRoadWidth(float roadWidth);
 
+	//pavement
+	UFUNCTION(BlueprintCallable, Category = "Set Road Width")
+	static void SetPavementWidth(float pavementWidth);
+	
 	//teture resolution
 	UFUNCTION(BlueprintCallable, Category = "Set Texture Resolution")
 	static void SetTextureResolution(int32 width, int32 height);
@@ -490,6 +497,8 @@ public:
 
 	//road width
 	static float RoadWidth;
+	//pavement width
+	static float PavementWidth;
 	
 	//setvoronoi
 	static FVector2D VectorASeed;
