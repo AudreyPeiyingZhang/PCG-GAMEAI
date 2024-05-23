@@ -407,6 +407,10 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Polygons Calculation")
 	static void CreateVoronoiShapePolygon(UProceduralMeshComponent* ProceduralMesh, UMaterialInterface* MaterialInstance);
 	UFUNCTION(BlueprintCallable, Category = "Polygons Calculation")
+	static void InstantiateObject(UInstancedStaticMeshComponent* StaticMesh, FVector InstanceLocation);
+	UFUNCTION(BlueprintCallable, Category = "Polygons Calculation")
+	static void ScatterPointsInSquare(FVector BaseLeftPos, FVector BaseRightPos, FVector TopLeftPos, FVector TopRightPos, int32 NumberOfObjects);
+	UFUNCTION(BlueprintCallable, Category = "Polygons Calculation")
 	static void TriangleFanFirstSubdivide(FVertexData PreVtx, FVertexData NextNextVtx,TArray<int32> VtxIndex,TArray<FVertexData> VtxData, bool IsEdge);
 	UFUNCTION(BlueprintCallable, Category = "Polygons Calculation")
 	static void TriangleFanSecondSubdivide(FVector Pos1, FVector Pos2,TArray<int32> VtxIndex,TArray<FVertexData> VtxData, bool IsEdge, TArray<int32>& MidLeftTriangle, TArray<int32>& MidRightTriangle, TArray<int32>& TopTriangleToExtrude, TArray<FVertexData>& TopTriangleDataToExtrude);
@@ -448,6 +452,10 @@ public:
 	//pavement
 	UFUNCTION(BlueprintCallable, Category = "Set Road Width")
 	static void SetPavementWidth(float pavementWidth);
+
+	//set tree and streetlight
+	UFUNCTION(BlueprintCallable,Category = "Set Instantiate Objects")
+	static void SetInstantiateObjects(UInstancedStaticMeshComponent* tree, UInstancedStaticMeshComponent* streetLight);
 	
 	//teture resolution
 	UFUNCTION(BlueprintCallable, Category = "Set Texture Resolution")
@@ -456,6 +464,8 @@ public:
 	//clear all data
 	UFUNCTION(BlueprintCallable, Category = "Clear Data")
 	static void ClearAllArrays();
+
+
 
 
 	
@@ -516,6 +526,9 @@ public:
 	static int32 TextureResolutionInY;
 	//perlin noise
 	static int32 PerlinNoiseSeed;
+	//
+	static UInstancedStaticMeshComponent* Tree;
+	static UInstancedStaticMeshComponent* StreetLight;
 
 	//function to make texture 2d
 

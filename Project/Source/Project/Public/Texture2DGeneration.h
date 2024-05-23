@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
+#include "Components/InstancedStaticMeshComponent.h"
 #include "Texture2DGeneration.generated.h"
 
 class UProceduralMeshComponent;
@@ -63,11 +64,11 @@ protected:
 
 	//road width
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "RoadWidth")
-	float RoadWidth = 1.0f;
+	float RoadWidth = 3.0f;
 
 	//pavement width
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "PavementWidth")
-	float PavementWidth = RoadWidth/3;
+	float PavementWidth = RoadWidth/2;
 
 	//resolution
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "TextureResolution")
@@ -78,4 +79,10 @@ protected:
 	//
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "PerlinNoiseSeed")
 	int32 PerlinNoiseSeed = 15;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Infrasturcture")
+	UInstancedStaticMeshComponent* TreeStaticMesh;
+	
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Infrasturcture")
+	UInstancedStaticMeshComponent* StreetLightStaticMesh;
 };

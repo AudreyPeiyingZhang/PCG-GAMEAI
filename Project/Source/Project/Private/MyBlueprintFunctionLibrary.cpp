@@ -2,6 +2,8 @@
 
 
 #include "MyBlueprintFunctionLibrary.h"
+
+#include "Components/InstancedStaticMeshComponent.h"
 #include "GameFramework/HUD.h"
 
 
@@ -159,6 +161,8 @@ float UMyBlueprintFunctionLibrary::PavementWidth;
 int32 UMyBlueprintFunctionLibrary::TextureResolutionInX;
 int32 UMyBlueprintFunctionLibrary::TextureResolutionInY;
 int32 UMyBlueprintFunctionLibrary::PerlinNoiseSeed;
+UInstancedStaticMeshComponent* UMyBlueprintFunctionLibrary::Tree;
+UInstancedStaticMeshComponent* UMyBlueprintFunctionLibrary::StreetLight;
 
 float UMyBlueprintFunctionLibrary::PerlinNoiseLerp(float l, float r, float t)
 {
@@ -1258,6 +1262,13 @@ void UMyBlueprintFunctionLibrary::SetPavementWidth(float pavementWidth)
 	PavementWidth = pavementWidth;
 }
 
+void UMyBlueprintFunctionLibrary::SetInstantiateObjects(UInstancedStaticMeshComponent* tree,
+	UInstancedStaticMeshComponent* streetLight)
+{
+	Tree = tree;
+	StreetLight = streetLight;
+}
+
 float UMyBlueprintFunctionLibrary::UseNormalDistributionToGetBuildingHeight(FVector2D CurrentPos)
 {
 	const float exponent = FMath::Exp(-(FMath::Square(CurrentPos.X - CityCenterPos.X) / (2 * SigmaX * SigmaX) 
@@ -1517,6 +1528,42 @@ FVector UMyBlueprintFunctionLibrary::CalculateBisector(FVector VtxA, FVector Vtx
 	 
 }
 
+void UMyBlueprintFunctionLibrary::InstantiateObject(UInstancedStaticMeshComponent* StaticMesh, FVector InstanceLocation)
+{
+	InstanceLocation.Z+=0.01;
+	const FTransform InstantiateTransform  = FTransform(FRotator(0,0,0),InstanceLocation, FVector(0.005, 0.005,0.005));
+
+	StaticMesh->AddInstance(InstantiateTransform);
+
+}
+
+void UMyBlueprintFunctionLibrary::ScatterPointsInSquare(FVector BaseLeftPos, FVector BaseRightPos, FVector TopLeftPos,FVector TopRightPos,int32 NumberOfObjects)
+{
+	constexpr int32 Slider = 0.2;
+	const FVector LeftMiddlePos = BaseLeftPos+Slider*(TopLeftPos-BaseLeftPos);
+	const FVector RightMiddlePos = BaseRightPos+Slider*(TopRightPos-BaseRightPos);
+	//divide into n points
+	
+	const FVector Dist = RightMiddlePos - LeftMiddlePos;
+	for(int i = 1; i<NumberOfObjects; i++)
+	{
+		const float Ratio = static_cast<float>(i) / static_cast<float>(NumberOfObjects);
+		const FVector InstantiateLocation = LeftMiddlePos + Ratio*Dist;
+		if(i%2!=0)
+		{
+			InstantiateObject(Tree, InstantiateLocation);
+		}
+
+		else
+		{
+			InstantiateObject(StreetLight, InstantiateLocation);
+		}
+		
+	}
+	
+}
+
+
 void UMyBlueprintFunctionLibrary::TriangleFanSecondSubdivide(FVector Pos1, FVector Pos2, TArray<int32> VtxIndex, TArray<FVertexData> VtxData, bool IsEdge, TArray<int32>& MidLeftTriangle, TArray<int32>& MidRightTriangle, TArray<int32>& TopTriangleToExtrude, TArray<FVertexData>& TopTriangleDataToExtrude)
 {
 	TArray<int32> TwoBase;
@@ -1610,6 +1657,8 @@ void UMyBlueprintFunctionLibrary::TriangleFanSecondSubdivide(FVector Pos1, FVect
 	//create quad
 	
 	DivideQuadIntoTriangle(TwoBase, TwoMid, MidLeftTriangle,MidRightTriangle);
+
+	ScatterPointsInSquare(BaseLeftVtxData.VtxPos, BaseRightVtxData.VtxPos, MidBetweenCenterAndFirstVtxData.VtxPos,MidBetweenCenterAndSecondVtxData.VtxPos, 4 );
 
 }
 
@@ -1820,7 +1869,7 @@ void UMyBlueprintFunctionLibrary::CreateVoronoiShapePolygon(UProceduralMeshCompo
 
 		
 		//get center point 
-		FVector CentroidPos = CurrentCell.CalculateCentroid();
+		FVector CentroidPos = CurrentCell.CalculateIncenter();
 		FVector CenterNormal(0, 0, 1); 
 		FVector2D CenterUV0(0.0f, 0.0f); 
 		FVector2D CenterUV1(CentroidPos.X / UVScale, CentroidPos.Y / UVScale);

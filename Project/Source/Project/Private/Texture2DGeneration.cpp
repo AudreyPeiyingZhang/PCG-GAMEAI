@@ -2,7 +2,6 @@
 
 
 #include "Texture2DGeneration.h"
-
 #include "MyBlueprintFunctionLibrary.h"
 
 
@@ -17,7 +16,8 @@ ATexture2DGeneration::ATexture2DGeneration()
 	//poly
 	ProceduralMesh = CreateDefaultSubobject<UProceduralMeshComponent>("ProceduralMeshComponent");
 	CityMaterialInterface = CreateDefaultSubobject<UMaterialInterface>("CityMaterialInterface");
-
+	TreeStaticMesh = CreateDefaultSubobject<UInstancedStaticMeshComponent>(TEXT("TreeStaticMesh"));
+	StreetLightStaticMesh = CreateDefaultSubobject<UInstancedStaticMeshComponent>(TEXT("StreetLightStaticMesh"));
 	SetRootComponent(ProceduralMesh);
 
 	
@@ -77,6 +77,7 @@ void ATexture2DGeneration::ResetParameters()
 	//normal distribution
 	UMyBlueprintFunctionLibrary::SetCityCenterHeightSigma(MaxHeight, CenterPos, SigmaX,
 	SigmaY);
+	UMyBlueprintFunctionLibrary::SetInstantiateObjects(TreeStaticMesh, StreetLightStaticMesh);
 }
 
 void ATexture2DGeneration::Regenerate()
