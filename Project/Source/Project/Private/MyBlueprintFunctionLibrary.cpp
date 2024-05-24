@@ -53,12 +53,12 @@ void UMyBlueprintFunctionLibrary::SetTexture2DPixels(UTexture2D* Texture2D, int3
 
 void UMyBlueprintFunctionLibrary::SetVoronoiAndPerlinSeed(float aSeed,float bSeed, float perlinSeed)
 {
-	VectorASeed = FVector2D(3.453, 2.983);
+	VectorASeed = FVector2D(3.453, 2.983) + aSeed;
 	AOffset = aSeed;
-	AAmplitude = 100000.0f;
-	VectorBSeed = FVector2D(5.932, 7.652);
+	AAmplitude = 10000000.0f +aSeed;
+	VectorBSeed = FVector2D(5.932, 7.652) + bSeed;
 	BOffset = bSeed;
-	BAmplitude = 100000.0f;
+	BAmplitude = 10000000.0f + bSeed;
 	PerlinNoiseSeed = perlinSeed;
 }
 

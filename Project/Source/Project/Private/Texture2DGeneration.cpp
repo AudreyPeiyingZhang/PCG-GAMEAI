@@ -105,7 +105,7 @@ void ATexture2DGeneration::Regenerate()
 	UMyBlueprintFunctionLibrary::PrintVertexPosAndUniqueCellNumber();
 	UMyBlueprintFunctionLibrary::GroupVerticesWithSharedCells(pTexture);
 	UMyBlueprintFunctionLibrary::PrintPairedVertices();
-	UMyBlueprintFunctionLibrary::DrawDebugEdges(GetWorld());
+	//UMyBlueprintFunctionLibrary::DrawDebugEdges(GetWorld());
 	//functions below is to create polygons
 	UMyBlueprintFunctionLibrary::ProcessVerticesForPolyCalculation(pTexture);
 	UMyBlueprintFunctionLibrary::AssignVertexUniqueIndex();
