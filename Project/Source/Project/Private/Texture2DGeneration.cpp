@@ -82,6 +82,8 @@ void ATexture2DGeneration::ResetParameters()
 
 void ATexture2DGeneration::Regenerate()
 {
+
+
 	//create texture2d
 	pTexture = UMyBlueprintFunctionLibrary::CreateTexture2D();
 	//set texture to material
@@ -91,6 +93,7 @@ void ATexture2DGeneration::Regenerate()
 	Plane->SetMaterial(0, MaterialInstance);
 	//clear texture2d
 	UMyBlueprintFunctionLibrary::ClearTexture2D(pTexture, FColor::White);
+
 	//draw any (x,y) on texture2d pixel
 	//UMyBlueprintFunctionLibrary::SetTexture2DPixels(Texture2D, 20, 20, FColor::Red);
 	UMyBlueprintFunctionLibrary::VoronoiCalculation(pTexture);
@@ -114,8 +117,16 @@ void ATexture2DGeneration::Regenerate()
 	UMyBlueprintFunctionLibrary::AssignEachCellStruct();
 	UMyBlueprintFunctionLibrary::SortVerticesInCells();
 	UMyBlueprintFunctionLibrary::PrintCellsArray();
-
 	UMyBlueprintFunctionLibrary::CreateVoronoiShapePolygon(ProceduralMesh, CityMaterialInterface);
-	
+
 }
+
+void ATexture2DGeneration::Generate()
+{
+	ClearLastGeneration();
+	ResetParameters();
+	Regenerate();
+}
+
+
 

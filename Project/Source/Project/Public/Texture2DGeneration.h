@@ -9,6 +9,8 @@
 
 class UProceduralMeshComponent;
 
+
+
 UCLASS()
 class PROJECT_API ATexture2DGeneration : public AActor
 {
@@ -24,6 +26,10 @@ public:
 	void ResetParameters();
 	UFUNCTION(BlueprintCallable, Category = "Regenerate")
 	void Regenerate();
+	UFUNCTION(BlueprintCallable, Category = "Generate")
+	void Generate();
+
+	
 	
 	
 	
@@ -85,4 +91,10 @@ protected:
 	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Infrasturcture")
 	UInstancedStaticMeshComponent* StreetLightStaticMesh;
+	
+
+
+
 };
+
+
