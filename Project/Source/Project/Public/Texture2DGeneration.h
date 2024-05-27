@@ -57,6 +57,8 @@ protected:
 	float SigmaX = 50.0f;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Building")
 	float SigmaY = 50.0f;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Building")
+	float BuildingHeightNoise = 20.21;
 	//voronoi seed
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "VoronoiSeed")
 	float AOffset = 9.45;
@@ -92,7 +94,15 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Infrasturcture")
 	UInstancedStaticMeshComponent* StreetLightStaticMesh;
 	
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "RoadType")
+	bool IsVoronoi = true;
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "RoadType")
+	bool IsSquare = false;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "RoadType")
+	bool IsRectangle = false;
+	
 
 
 };

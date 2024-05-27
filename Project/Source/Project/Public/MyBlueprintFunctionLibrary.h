@@ -439,7 +439,7 @@ public:
 
 	//set voronoi seed Parameter
 	UFUNCTION(BlueprintCallable, Category = "Normal Distribution")
-	static void SetCityCenterHeightSigma( float maxHeight, FVector2D centerPos, float sigmaX, float sigmaY);
+	static void SetCityCenterHeightSigma( float maxHeight, FVector2D centerPos, float sigmaX, float sigmaY, float buildingHeightNoise);
 	UFUNCTION(BlueprintCallable, Category = "Set Voronoi Parameter")
 	static void SetVoronoiAndPerlinSeed(float aSeed,float bSeed, float perlinSeed);
 	UFUNCTION(BlueprintCallable, Category = "Set Voronoi Parameter")
@@ -449,6 +449,9 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Set Road Width")
 	static void SetRoadWidth(float roadWidth);
 
+	//
+	UFUNCTION(BlueprintCallable, Category = "Set Road Type")
+	static void SetRoadType(bool isVoro, bool isSqua, bool isRech);
 	//pavement
 	UFUNCTION(BlueprintCallable, Category = "Set Road Width")
 	static void SetPavementWidth(float pavementWidth);
@@ -504,6 +507,7 @@ public:
 	static FVector2D CityCenterPos;
 	static float SigmaX;
 	static float SigmaY;
+	static float BuildingHeightNoise;
 
 	//road width
 	static float RoadWidth;
@@ -529,6 +533,11 @@ public:
 	//
 	static UInstancedStaticMeshComponent* Tree;
 	static UInstancedStaticMeshComponent* StreetLight;
+	
+	 //set voronoi/rechtangle/square
+	static bool IsVoronoi;
+	static bool IsSquare;
+	static bool IsRectangle;
 
 	//function to make texture 2d
 

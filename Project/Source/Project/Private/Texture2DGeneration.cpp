@@ -74,9 +74,10 @@ void ATexture2DGeneration::ResetParameters()
 	UMyBlueprintFunctionLibrary::SetRoadWidth(RoadWidth);
 	UMyBlueprintFunctionLibrary::SetPavementWidth(PavementWidth);
 	UMyBlueprintFunctionLibrary::SetCellCount(CellCount);
+	UMyBlueprintFunctionLibrary::SetRoadType(IsVoronoi, IsSquare, IsRectangle);
 	//normal distribution
 	UMyBlueprintFunctionLibrary::SetCityCenterHeightSigma(MaxHeight, CenterPos, SigmaX,
-	SigmaY);
+	SigmaY, BuildingHeightNoise);
 	UMyBlueprintFunctionLibrary::SetInstantiateObjects(TreeStaticMesh, StreetLightStaticMesh);
 }
 

@@ -67,6 +67,13 @@ void UMyBlueprintFunctionLibrary::SetCellCount(int32 cellCount)
 	CellCount = cellCount;
 }
 
+void UMyBlueprintFunctionLibrary::SetRoadType(bool isVoro, bool isSqua, bool isRech)
+{
+	IsVoronoi = isVoro;
+	IsSquare = isSqua;
+	IsRectangle = isRech;
+}
+
 
 FVector2D UMyBlueprintFunctionLibrary::PelinNoiseGeneratePseudoRandomVector2D(FVector2D Vector2D, float perlinNoiseSeed)
 {
@@ -148,6 +155,7 @@ float UMyBlueprintFunctionLibrary::MaxHeight;
 FVector2D UMyBlueprintFunctionLibrary::CityCenterPos;
 float UMyBlueprintFunctionLibrary::SigmaX;
 float UMyBlueprintFunctionLibrary::SigmaY;
+float UMyBlueprintFunctionLibrary::BuildingHeightNoise;
 //UI
 FVector2D UMyBlueprintFunctionLibrary::VectorASeed;
 float UMyBlueprintFunctionLibrary::AOffset;
@@ -163,6 +171,10 @@ int32 UMyBlueprintFunctionLibrary::TextureResolutionInY;
 int32 UMyBlueprintFunctionLibrary::PerlinNoiseSeed;
 UInstancedStaticMeshComponent* UMyBlueprintFunctionLibrary::Tree;
 UInstancedStaticMeshComponent* UMyBlueprintFunctionLibrary::StreetLight;
+bool UMyBlueprintFunctionLibrary::IsVoronoi;
+bool UMyBlueprintFunctionLibrary::IsSquare;
+bool UMyBlueprintFunctionLibrary::IsRectangle;
+
 
 float UMyBlueprintFunctionLibrary::PerlinNoiseLerp(float l, float r, float t)
 {
@@ -345,8 +357,27 @@ void UMyBlueprintFunctionLibrary::VoronoiCalculation(UTexture2D* Texture2D)
 					const FVector2D CurrentCellXY = FVector2D(CellXY.X + i, CellXY.Y +j);
 					if(CurrentCellXY.X < 0 || CurrentCellXY.Y < 0 || CurrentCellXY.X >=CellCount || CurrentCellXY.Y >=CellCount) continue;
 					const FVector2D CurrentCellPixelXY = FVector2D(PixelsInEachCellX* CurrentCellXY.X,PixelsInEachCellY* CurrentCellXY.Y);
-					const int32 RandomX = FMath::Floor(FMath::Lerp(0, PixelsInEachCellX, Vector2DtoGeneratePseudoRandomVector2D(CurrentCellPixelXY).X));
-					const int32 RandomY = FMath::Floor(FMath::Lerp(0, PixelsInEachCellY, Vector2DtoGeneratePseudoRandomVector2D(CurrentCellPixelXY).Y));
+					int32 RandomX = 0;
+					int32 RandomY = 0;
+					
+					if(IsVoronoi)
+					{
+						RandomX = FMath::Floor(FMath::Lerp(0, PixelsInEachCellX, Vector2DtoGeneratePseudoRandomVector2D(CurrentCellPixelXY).X));
+						RandomY = FMath::Floor(FMath::Lerp(0, PixelsInEachCellY, Vector2DtoGeneratePseudoRandomVector2D(CurrentCellPixelXY).Y));
+					}
+
+					if(IsSquare)
+					{
+						RandomX = PixelsInEachCellX/2;
+						RandomY = PixelsInEachCellY/2;
+					}
+
+					if(IsRectangle)
+					{
+						RandomX = PixelsInEachCellX/2;
+						RandomY = FMath::Floor(FMath::Lerp(0, PixelsInEachCellY, Vector2DtoGeneratePseudoRandomVector2D(CurrentCellPixelXY).Y));
+					}
+					
 						
 					FVector2D VoronoiSeedPixelXY = FVector2D((CurrentCellPixelXY.X + RandomX), (CurrentCellPixelXY.Y + RandomY));
 					
@@ -1242,12 +1273,13 @@ void UMyBlueprintFunctionLibrary::PrintCellsArray()
 //////////////////////////////////////////////below is for poly calculation
 
 void UMyBlueprintFunctionLibrary::SetCityCenterHeightSigma(float maxHeight, FVector2D centerPos, float sigmaX,
-	float sigmaY)
+	float sigmaY, float buildingHeightNoise)
 {
 	MaxHeight = maxHeight;
 	CityCenterPos = centerPos;
 	SigmaX = sigmaX;
 	SigmaY = sigmaY;
+	BuildingHeightNoise = buildingHeightNoise;
 	
 	
 }
@@ -1387,7 +1419,7 @@ void UMyBlueprintFunctionLibrary::ExtrudePolygon(TArray<int32> BaseTriangle, TAr
 	//setup building height
 	FVector2D BuildingCenter = FVector2D(BaseVtxData[0].VtxPos.X,BaseVtxData[0].VtxPos.Y);
 	float BuildingHeight = UseNormalDistributionToGetBuildingHeight(BuildingCenter);
-	float FakeNoise = (0.75f +(1.25f-0.85f)*Vector2DtoGeneratePseudoRandomVector1D(BuildingCenter, FVector2D(2.463, 10.313), 6.24, 19.02));
+	float FakeNoise = (0.75f +(1.25f-0.75f)*Vector2DtoGeneratePseudoRandomVector1D(BuildingCenter, FVector2D(2.463, 10.313), BuildingHeightNoise, 100000000.0));
 	BuildingHeight*=FakeNoise;
 	
 	for(int i =0; i<BaseVtxData.Num();i++)
