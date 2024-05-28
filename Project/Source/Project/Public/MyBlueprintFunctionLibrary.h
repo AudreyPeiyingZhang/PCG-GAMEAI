@@ -407,7 +407,7 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Polygons Calculation")
 	static void CreateVoronoiShapePolygon(UProceduralMeshComponent* ProceduralMesh, UMaterialInterface* MaterialInstance);
 	UFUNCTION(BlueprintCallable, Category = "Polygons Calculation")
-	static void InstantiateObject(UInstancedStaticMeshComponent* StaticMesh, FVector InstanceLocation);
+	static void InstantiateObject(UInstancedStaticMeshComponent* StaticMesh, FVector WorldLocation);
 	UFUNCTION(BlueprintCallable, Category = "Polygons Calculation")
 	static void ScatterPointsInSquare(FVector BaseLeftPos, FVector BaseRightPos, FVector TopLeftPos, FVector TopRightPos, int32 NumberOfObjects);
 	UFUNCTION(BlueprintCallable, Category = "Polygons Calculation")

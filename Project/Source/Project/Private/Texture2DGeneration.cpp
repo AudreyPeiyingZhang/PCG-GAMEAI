@@ -15,11 +15,15 @@ ATexture2DGeneration::ATexture2DGeneration()
 	MaterialInterface = CreateDefaultSubobject<UMaterialInterface>("MaterialInterface");
 	//poly
 	ProceduralMesh = CreateDefaultSubobject<UProceduralMeshComponent>("ProceduralMeshComponent");
+	ProceduralMesh->SetRelativeLocation(FVector(-50,-50,0));
 	CityMaterialInterface = CreateDefaultSubobject<UMaterialInterface>("CityMaterialInterface");
 	TreeStaticMesh = CreateDefaultSubobject<UInstancedStaticMeshComponent>(TEXT("TreeStaticMesh"));
 	StreetLightStaticMesh = CreateDefaultSubobject<UInstancedStaticMeshComponent>(TEXT("StreetLightStaticMesh"));
-	SetRootComponent(ProceduralMesh);
-
+	SetRootComponent(Plane);
+	ProceduralMesh->AttachToComponent(RootComponent, FAttachmentTransformRules::SnapToTargetIncludingScale);
+	TreeStaticMesh->AttachToComponent(ProceduralMesh, FAttachmentTransformRules::SnapToTargetIncludingScale);
+	StreetLightStaticMesh->AttachToComponent(ProceduralMesh, FAttachmentTransformRules::SnapToTargetIncludingScale);
+	
 	
 	
 	

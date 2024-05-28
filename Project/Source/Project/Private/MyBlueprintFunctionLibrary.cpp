@@ -1560,10 +1560,11 @@ FVector UMyBlueprintFunctionLibrary::CalculateBisector(FVector VtxA, FVector Vtx
 	 
 }
 
-void UMyBlueprintFunctionLibrary::InstantiateObject(UInstancedStaticMeshComponent* StaticMesh, FVector InstanceLocation)
+void UMyBlueprintFunctionLibrary::InstantiateObject(UInstancedStaticMeshComponent* StaticMesh, FVector WorldLocation)
 {
-	InstanceLocation.Z+=0.01;
-	const FTransform InstantiateTransform  = FTransform(FRotator(0,0,0),InstanceLocation, FVector(0.005, 0.005,0.005));
+	
+	WorldLocation.Z += 0.01f; // Adjust Z position slightly
+	const FTransform InstantiateTransform = FTransform(FRotator(0,0,0), WorldLocation, FVector(0.005, 0.005, 0.005));
 
 	StaticMesh->AddInstance(InstantiateTransform);
 
@@ -1690,7 +1691,7 @@ void UMyBlueprintFunctionLibrary::TriangleFanSecondSubdivide(FVector Pos1, FVect
 	
 	DivideQuadIntoTriangle(TwoBase, TwoMid, MidLeftTriangle,MidRightTriangle);
 
-	ScatterPointsInSquare(BaseLeftVtxData.VtxPos, BaseRightVtxData.VtxPos, MidBetweenCenterAndFirstVtxData.VtxPos,MidBetweenCenterAndSecondVtxData.VtxPos, 4 );
+	ScatterPointsInSquare(BaseLeftVtxData.VtxPos, BaseRightVtxData.VtxPos, MidBetweenCenterAndFirstVtxData.VtxPos,MidBetweenCenterAndSecondVtxData.VtxPos, 3 );
 
 }
 
