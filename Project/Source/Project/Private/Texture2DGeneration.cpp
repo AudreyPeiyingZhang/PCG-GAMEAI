@@ -20,10 +20,11 @@ ATexture2DGeneration::ATexture2DGeneration()
 	TreeStaticMesh = CreateDefaultSubobject<UInstancedStaticMeshComponent>(TEXT("TreeStaticMesh"));
 	StreetLightStaticMesh = CreateDefaultSubobject<UInstancedStaticMeshComponent>(TEXT("StreetLightStaticMesh"));
 	SetRootComponent(Plane);
-	ProceduralMesh->AttachToComponent(RootComponent, FAttachmentTransformRules::SnapToTargetIncludingScale);
-	TreeStaticMesh->AttachToComponent(ProceduralMesh, FAttachmentTransformRules::SnapToTargetIncludingScale);
-	StreetLightStaticMesh->AttachToComponent(ProceduralMesh, FAttachmentTransformRules::SnapToTargetIncludingScale);
-	
+
+	// Attach other components to the root or to each other
+	ProceduralMesh->SetupAttachment(RootComponent);
+	TreeStaticMesh->SetupAttachment(ProceduralMesh);
+	StreetLightStaticMesh->SetupAttachment(ProceduralMesh);
 	
 	
 	

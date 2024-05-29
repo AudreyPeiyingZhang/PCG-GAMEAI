@@ -1419,8 +1419,13 @@ void UMyBlueprintFunctionLibrary::ExtrudePolygon(TArray<int32> BaseTriangle, TAr
 	//setup building height
 	FVector2D BuildingCenter = FVector2D(BaseVtxData[0].VtxPos.X,BaseVtxData[0].VtxPos.Y);
 	float BuildingHeight = UseNormalDistributionToGetBuildingHeight(BuildingCenter);
-	float FakeNoise = (0.75f +(1.25f-0.75f)*Vector2DtoGeneratePseudoRandomVector1D(BuildingCenter, FVector2D(2.463, 10.313), BuildingHeightNoise, 100000000.0));
+	float FakeNoise = (0.5f +(1.5f-0.5f)*Vector2DtoGeneratePseudoRandomVector1D(BuildingCenter, FVector2D(2.463, 10.313), BuildingHeightNoise, 100000000.0));
 	BuildingHeight*=FakeNoise;
+	//change building as grass
+	if(BuildingHeight<=10)
+	{
+		BuildingHeight = 0.01;
+	}
 	
 	for(int i =0; i<BaseVtxData.Num();i++)
 	{
@@ -1564,7 +1569,7 @@ void UMyBlueprintFunctionLibrary::InstantiateObject(UInstancedStaticMeshComponen
 {
 	
 	WorldLocation.Z += 0.01f; // Adjust Z position slightly
-	const FTransform InstantiateTransform = FTransform(FRotator(0,0,0), WorldLocation, FVector(0.005, 0.005, 0.005));
+	const FTransform InstantiateTransform = FTransform(FRotator(0,0,0), WorldLocation, FVector(0.01, 0.01, 0.01));
 
 	StaticMesh->AddInstance(InstantiateTransform);
 
@@ -1836,6 +1841,7 @@ void UMyBlueprintFunctionLibrary::TriangleFanFirstSubdivide(FVertexData PreVtx, 
 
 	
 }
+
 
 FVector UMyBlueprintFunctionLibrary::FindKeyByValue(const TMap<FVector, int32>& Map, int32 ValueToFind)
 {
