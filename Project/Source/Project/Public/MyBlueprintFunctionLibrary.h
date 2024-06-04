@@ -355,9 +355,9 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Perlin Noise Calculation")
 	static float PerlinNoiseLerp(float l, float r, float t);
 	UFUNCTION(BlueprintCallable, Category = "Perlin Noise Calculation")
-	static float PerlinNoiseCalculation(UTexture2D* Texture2D, int32 GridCount, float perlinNoiseSeed, FVector2D PixelPos);
+	static float PerlinNoiseCalculation(FVector2D WidthAndHeight, int32 GridCount, float perlinNoiseSeed, FVector2D PixelPos);
 	UFUNCTION(BlueprintCallable, Category = "Perlin Noise Calculation")
-	static void FractualBrownMotion(int32 octaves, int32 initialFrequency, float initialStrength,UTexture2D* Texture2D);
+	static float FractualBrownMotion(int32 octaves, int32 initialFrequency, float initialStrength, FVector2D PixelPos,FVector2D WidthAndHeight);
 	UFUNCTION(BlueprintCallable, Category = "Voronoi Calculation")
 	static void DrawVoronoiSeedsOnTexture2D(UTexture2D* Texture2D, FColor color);
 	UFUNCTION(BlueprintCallable, Category = "Voronoi Calculation")
@@ -434,12 +434,14 @@ public:
 	static void ExtrudePolygon(TArray<int32> BaseTriangle, TArray<FVertexData> BaseVtxData,TArray<int32>& ExtrudeTriangles);
 	UFUNCTION(BlueprintCallable, Category = "Polygons Calculation")
 	static void AdjustNearCellUV2ToMakeBeach(TArray<FVector> vtx);
+	UFUNCTION(BlueprintCallable, Category = "Polygons Calculation")
+	static void GenerateTerrian(UProceduralMeshComponent* TerrainProceduralMesh, UMaterialInterface* TerrainMaterialInstance,FVector2D terrainHeightAndWidth);
 	UFUNCTION(BlueprintCallable, Category = "Normal Distribution")
 	static float UseNormalDistributionToGetBuildingHeight(FVector2D CurrentPos);
 
 	//set voronoi seed Parameter
 	UFUNCTION(BlueprintCallable, Category = "Normal Distribution")
-	static void SetCityCenterHeightSigma( float maxHeight, FVector2D centerPos, float sigmaX, float sigmaY, float buildingHeightNoise);
+	static void SetCityCenterHeightSigma( float maxHeight, FVector2D centerPos, float sigmaX, float sigmaY, float buildingHeightNoise, float greenAreaAmount);
 	UFUNCTION(BlueprintCallable, Category = "Set Voronoi Parameter")
 	static void SetVoronoiAndPerlinSeed(float aSeed,float bSeed, float perlinSeed);
 	UFUNCTION(BlueprintCallable, Category = "Set Voronoi Parameter")
@@ -508,6 +510,7 @@ public:
 	static float SigmaX;
 	static float SigmaY;
 	static float BuildingHeightNoise;
+	static float GreenAreaAmount;
 
 	//road width
 	static float RoadWidth;

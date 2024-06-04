@@ -17,13 +17,16 @@ ATexture2DGeneration::ATexture2DGeneration()
 	ProceduralMesh = CreateDefaultSubobject<UProceduralMeshComponent>("ProceduralMeshComponent");
 	//ProceduralMesh->SetRelativeLocation(FVector(-50,-50,0));
 	CityMaterialInterface = CreateDefaultSubobject<UMaterialInterface>("CityMaterialInterface");
+	
+	TerrainProceduralMesh= CreateDefaultSubobject<UProceduralMeshComponent>("TerrainProceduralMeshComponent");
+	TerrainMaterialInterface = CreateDefaultSubobject<UMaterialInterface>("TerrainMaterialInterface");
 	TreeStaticMesh = CreateDefaultSubobject<UInstancedStaticMeshComponent>(TEXT("TreeStaticMesh"));
 	StreetLightStaticMesh = CreateDefaultSubobject<UInstancedStaticMeshComponent>(TEXT("StreetLightStaticMesh"));
 	SetRootComponent(Plane);
 
 	// Attach other components to the root or to each other
 	ProceduralMesh->SetupAttachment(RootComponent);
-	
+	TerrainProceduralMesh->SetupAttachment(RootComponent);
 	TreeStaticMesh->SetupAttachment(ProceduralMesh);
 	StreetLightStaticMesh->SetupAttachment(ProceduralMesh);
 	
@@ -69,6 +72,22 @@ void ATexture2DGeneration::ClearLastGeneration()
 {
 	UMyBlueprintFunctionLibrary::ClearAllArrays();
 	ProceduralMesh->ClearAllMeshSections();
+	TerrainProceduralMesh->ClearAllMeshSections();
+
+
+	//clear instances
+	TArray<UInstancedStaticMeshComponent*> InstancedCityComponents;
+	this->GetComponents<UInstancedStaticMeshComponent>(InstancedCityComponents, true);
+
+	
+	for (UInstancedStaticMeshComponent* InstancedMeshComp : InstancedCityComponents)
+	{
+		if (InstancedMeshComp)
+		{
+			InstancedMeshComp->ClearInstances();
+			
+		}
+	}
 	
 }
 
@@ -83,7 +102,7 @@ void ATexture2DGeneration::ResetParameters()
 	UMyBlueprintFunctionLibrary::SetRoadType(IsVoronoi, IsSquare, IsRectangle);
 	//normal distribution
 	UMyBlueprintFunctionLibrary::SetCityCenterHeightSigma(MaxHeight, CenterPos, SigmaX,
-	SigmaY, BuildingHeightNoise);
+	SigmaY, BuildingHeightNoise,GreenAreaAmount);
 	UMyBlueprintFunctionLibrary::SetInstantiateObjects(TreeStaticMesh, StreetLightStaticMesh);
 }
 
@@ -125,6 +144,7 @@ void ATexture2DGeneration::Regenerate()
 	UMyBlueprintFunctionLibrary::SortVerticesInCells();
 	UMyBlueprintFunctionLibrary::PrintCellsArray();
 	UMyBlueprintFunctionLibrary::CreateVoronoiShapePolygon(ProceduralMesh, CityMaterialInterface);
+	UMyBlueprintFunctionLibrary::GenerateTerrian(TerrainProceduralMesh,TerrainMaterialInterface,FVector2D(1000,1000));
 
 }
 

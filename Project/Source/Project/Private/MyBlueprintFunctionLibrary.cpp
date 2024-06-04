@@ -156,6 +156,7 @@ FVector2D UMyBlueprintFunctionLibrary::CityCenterPos;
 float UMyBlueprintFunctionLibrary::SigmaX;
 float UMyBlueprintFunctionLibrary::SigmaY;
 float UMyBlueprintFunctionLibrary::BuildingHeightNoise;
+float UMyBlueprintFunctionLibrary::GreenAreaAmount;
 //UI
 FVector2D UMyBlueprintFunctionLibrary::VectorASeed;
 float UMyBlueprintFunctionLibrary::AOffset;
@@ -182,10 +183,10 @@ float UMyBlueprintFunctionLibrary::PerlinNoiseLerp(float l, float r, float t)
 	return FMath::Lerp(l, r, t);
 }
 
-float UMyBlueprintFunctionLibrary::PerlinNoiseCalculation(UTexture2D* Texture2D, int32 GridCount, float perlinNoiseSeed, FVector2D PixelPos)
+float UMyBlueprintFunctionLibrary::PerlinNoiseCalculation(FVector2D WidthAndHeight, int32 GridCount, float perlinNoiseSeed, FVector2D PixelPos)
 {
-	const int32 Width = Texture2D->GetSizeX();
-	const int32 Height = Texture2D->GetSizeY();
+	const int32 Width = WidthAndHeight.X;
+	const int32 Height = WidthAndHeight.Y;
 
 	const int32 PixelInEachGridX = Width/GridCount; 
 	const int32 PixelInEachGridY = Height/GridCount;
@@ -234,51 +235,55 @@ float UMyBlueprintFunctionLibrary::PerlinNoiseCalculation(UTexture2D* Texture2D,
 	return  NoiseValue;
 }
 
-void UMyBlueprintFunctionLibrary::FractualBrownMotion(int32 octaves, int32 initialFrequency, float initialStrength,UTexture2D* Texture2D)
+float UMyBlueprintFunctionLibrary::FractualBrownMotion(int32 octaves, int32 initialFrequency, float initialStrength,FVector2D PixelPos,FVector2D WidthAndHeight)
 {
-	const int32 Width = Texture2D->GetSizeX();
-	const int32 Height = Texture2D->GetSizeY();
-	FByteBulkData* RawImageDataOut = &Texture2D->GetPlatformData()->Mips[0].BulkData;
-	FColor* FormatedImageDataOut = static_cast<FColor*>(RawImageDataOut->Lock(LOCK_READ_WRITE));
+	//const int32 Width = Texture2D->GetSizeX();
+	//const int32 Height = Texture2D->GetSizeY();
+	//FByteBulkData* RawImageDataOut = &Texture2D->GetPlatformData()->Mips[0].BulkData;
+	//FColor* FormatedImageDataOut = static_cast<FColor*>(RawImageDataOut->Lock(LOCK_READ_WRITE));
 
 
 	
-	for(int32 i =0;i<Width; i++)
+	//for(int32 i =0;i<Width; i++)
+	//{
+		//for(int32 j =0; j<Height;j++)
+		//{
+
+	const int i = PixelPos.X;
+	const int j = PixelPos.Y;
+	
+	float NoiseValue = 0;
+	float frequency = initialFrequency;
+	float strength = initialStrength;
+	
+
+	for (int32 k = 0; k < octaves; k++)
 	{
-		for(int32 j =0; j<Height;j++)
-		{
-			
-			float NoiseValue = 0;
-			float frequency = initialFrequency;
-			float strength = initialStrength;
-			
+		strength /= 2; 
+		float layerNoise = PerlinNoiseCalculation(WidthAndHeight, frequency, PerlinNoiseSeed + frequency, FVector2D(i, j));
+		NoiseValue += layerNoise * strength;
 
-			for (int32 k = 0; k < octaves; k++)
-			{
-				strength /= 2; 
-				float layerNoise = PerlinNoiseCalculation(Texture2D, frequency, PerlinNoiseSeed + frequency, FVector2D(i, j));
-				NoiseValue += layerNoise * strength;
-
-				frequency *= 2; 
-				
-			}
-
-			NoiseValue = FMath::Clamp(NoiseValue,0.0f,1.0f);
-
-			FColor PixelColor = FColor(NoiseValue * 255, NoiseValue * 255, NoiseValue * 255, 255);
-			FormatedImageDataOut[(j * Width) + i] = PixelColor;
-
-			UE_LOG(LogTemp, Log, TEXT("NoiseValue at (%d, %d): %f"), i, j, NoiseValue);
-			
-			
-	
-
-
-		}
+		frequency *= 2; 
+		
 	}
 
-	RawImageDataOut->Unlock();
-	Texture2D->UpdateResource();
+	NoiseValue = FMath::Clamp(NoiseValue,0.0f,1.0f);
+	return NoiseValue;
+
+			//FColor PixelColor = FColor(NoiseValue * 255, NoiseValue * 255, NoiseValue * 255, 255);
+			//FormatedImageDataOut[(j * Width) + i] = PixelColor;
+
+			//UE_LOG(LogTemp, Log, TEXT("NoiseValue at (%d, %d): %f"), i, j, NoiseValue);
+			
+			
+	
+
+
+		//}
+	//}
+
+	//RawImageDataOut->Unlock();
+	//Texture2D->UpdateResource();
 	
 }
 
@@ -1273,13 +1278,14 @@ void UMyBlueprintFunctionLibrary::PrintCellsArray()
 //////////////////////////////////////////////below is for poly calculation
 
 void UMyBlueprintFunctionLibrary::SetCityCenterHeightSigma(float maxHeight, FVector2D centerPos, float sigmaX,
-	float sigmaY, float buildingHeightNoise)
+	float sigmaY, float buildingHeightNoise, float greenAreaAmount)
 {
 	MaxHeight = maxHeight;
 	CityCenterPos = centerPos;
 	SigmaX = sigmaX;
 	SigmaY = sigmaY;
 	BuildingHeightNoise = buildingHeightNoise;
+	GreenAreaAmount = greenAreaAmount;
 	
 	
 }
@@ -1419,10 +1425,11 @@ void UMyBlueprintFunctionLibrary::ExtrudePolygon(TArray<int32> BaseTriangle, TAr
 	//setup building height
 	FVector2D BuildingCenter = FVector2D(BaseVtxData[0].VtxPos.X,BaseVtxData[0].VtxPos.Y);
 	float BuildingHeight = UseNormalDistributionToGetBuildingHeight(BuildingCenter);
-	float FakeNoise = (0.5f +(1.5f-0.5f)*Vector2DtoGeneratePseudoRandomVector1D(BuildingCenter, FVector2D(2.463, 10.313), BuildingHeightNoise, 100000000.0));
-	BuildingHeight*=FakeNoise;
+	float NoiseScale = MaxHeight * 2.0f; 
+	float Noise = FMath::PerlinNoise2D(BuildingCenter / 10.0f) * NoiseScale;
+	BuildingHeight+=Noise;
 	//change building as grass
-	if(BuildingHeight<=10)
+	if(BuildingHeight<=GreenAreaAmount)
 	{
 		BuildingHeight = 0.01;
 	}
@@ -1437,6 +1444,11 @@ void UMyBlueprintFunctionLibrary::ExtrudePolygon(TArray<int32> BaseTriangle, TAr
 		FVector2D NewVtxUV1 = FVector2D(TopNewVtxPos.X/UVScale, TopNewVtxPos.Y/UVScale);
 		//roof
 		FVector2D NewVtxUV2 = FVector2D(1,0);
+		//set as green
+		if(BuildingHeight<=GreenAreaAmount)
+		{
+			NewVtxUV2 = FVector2D(2.5,0);
+		}
 		FVertexData NewVtxData(TopNewVtxPos, 0, NewVtxUV0, NewVtxUV1, NewVtxUV2,NewVtxNormal );
 		NewVtxData.VtxIndex = AddVertex(NewVtxData);
 		NewVtxIndexArray.Add(NewVtxData.VtxIndex);
@@ -1696,8 +1708,10 @@ void UMyBlueprintFunctionLibrary::TriangleFanSecondSubdivide(FVector Pos1, FVect
 	
 	DivideQuadIntoTriangle(TwoBase, TwoMid, MidLeftTriangle,MidRightTriangle);
 
-	ScatterPointsInSquare(BaseLeftVtxData.VtxPos, BaseRightVtxData.VtxPos, MidBetweenCenterAndFirstVtxData.VtxPos,MidBetweenCenterAndSecondVtxData.VtxPos, 3 );
-
+	if(!IsEdge)
+	{
+		ScatterPointsInSquare(BaseLeftVtxData.VtxPos, BaseRightVtxData.VtxPos, MidBetweenCenterAndFirstVtxData.VtxPos,MidBetweenCenterAndSecondVtxData.VtxPos, 3 );
+	}
 }
 
 void UMyBlueprintFunctionLibrary::TriangleFanFirstSubdivide(FVertexData PreVtx, FVertexData NextNextVtx, TArray<int32> VtxIndex, TArray<FVertexData> VtxData, bool IsEdge)
@@ -1813,7 +1827,10 @@ void UMyBlueprintFunctionLibrary::TriangleFanFirstSubdivide(FVertexData PreVtx, 
 	//set up midpoint pos for the subdivide 2
 	FVector LeftVtxPos = CalculateBisector(PreVtx.VtxPos,FirstPos,SecondPos, false);
 	FVector RightVtxPos = CalculateBisector(FirstPos, SecondPos, NextNextVtx.VtxPos,  false);
+
 	TriangleFanSecondSubdivide(LeftVtxPos, RightVtxPos, TopTriangle, TopTriangleVtxData, IsEdge, MiddleLeftTriangle, MiddleRightTriangle,TopTriangleExtrude, VertexDataToExtrude);
+	
+	
 
 	//add triangles
 	AllTriangles.Append(TopTriangleExtrude);
@@ -1870,14 +1887,14 @@ void UMyBlueprintFunctionLibrary::CreateVoronoiShapePolygon(UProceduralMeshCompo
 	TArray<FVector> BeachInnerVtx;
 	BeachInnerVtx.Empty();
 
-	
+	int CellCounter = 0;
 
 	for(FCellStruct& CurrentCell : Cells)
 	{
+		CellCounter++;
+		
 		bool IsThisCellOnEdge = false;
 
-		
-		
 		//check if the cell on the edge, make the beach
 		for(int i =0;i<CurrentCell.VerticesPosition.Num(); i++)
 		{
@@ -1886,7 +1903,7 @@ void UMyBlueprintFunctionLibrary::CreateVoronoiShapePolygon(UProceduralMeshCompo
 			{
 				IsThisCellOnEdge =  true;
 				//create slope
-				CurrentCell.VerticesPosition[i].Z -= 5.0f;
+				CurrentCell.VerticesPosition[i].Z -= 20.0f;
 			}
 			
 		}
@@ -1914,6 +1931,9 @@ void UMyBlueprintFunctionLibrary::CreateVoronoiShapePolygon(UProceduralMeshCompo
 		FVector2D CenterUV1(CentroidPos.X / UVScale, CentroidPos.Y / UVScale);
 		//road
 		FVector2D CenterUV2(0, 0);
+		
+
+		//set beach
 		if(IsThisCellOnEdge)
 		{
 			CenterUV2 = FVector2D(1.5,0);
@@ -1934,6 +1954,7 @@ void UMyBlueprintFunctionLibrary::CreateVoronoiShapePolygon(UProceduralMeshCompo
 			FVector2D VtxUV0(0.0f, 0.0f); 
 			FVector2D VtxUV1(VtxPos.X / UVScale, VtxPos.Y / UVScale); 
 			FVector2D VtxUV2(0, 0);
+			
 			if(IsThisCellOnEdge)
 			{
 				VtxUV2 = FVector2D(1.5,0);
@@ -1991,7 +2012,7 @@ void UMyBlueprintFunctionLibrary::CreateVoronoiShapePolygon(UProceduralMeshCompo
 		}
 	}
 	//blend uv2 from road to beach
-	AdjustNearCellUV2ToMakeBeach(BeachInnerVtx);
+	//AdjustNearCellUV2ToMakeBeach(BeachInnerVtx);
 	ProceduralMesh->CreateMeshSection(0, WholeVertices, Triangles, Normal, UV0,UV1,UV2,UV0, TArray<FColor>(), TArray<FProcMeshTangent>(), true);
 	
 	if (MaterialInstance)
@@ -2015,6 +2036,84 @@ void UMyBlueprintFunctionLibrary::AdjustNearCellUV2ToMakeBeach(TArray<FVector> v
 	}
 }
 
+void UMyBlueprintFunctionLibrary::GenerateTerrian(UProceduralMeshComponent* TerrainProceduralMesh,
+	UMaterialInterface* TerrainMaterialInstance, FVector2D terrainHeightAndWidth)
+{
+	
+	const int32 Width = terrainHeightAndWidth.X;
+	const int32 Height = terrainHeightAndWidth.Y;
+	float TallScale = 90.0f; 
+
+	TArray<FVector> TerrainVertices;
+	TArray<int32> TerrainTriangles;
+	TArray<FVector2D> TerrainUVs;
+	TArray<FVector> TerrainNormals;
+	TArray<FProcMeshTangent> TerrainTangents;
+
+	TerrainNormals.Init(FVector(0.0f, 0.0f, 0.0f), Width * Height); 
+
+	
+	for (int32 y = 0; y < Height; y++)
+	{
+		for (int32 x = 0; x < Width; x++)
+		{
+			float TerrainHeight = FractualBrownMotion(3,4,1,FVector2D(x,y),terrainHeightAndWidth ) * TallScale; 
+			TerrainVertices.Add(FVector(x, y, TerrainHeight));
+			TerrainUVs.Add(FVector2D(x, y));
+		}
+	}
+
+	
+	for (int32 y = 0; y < Height - 1; y++)
+	{
+		for (int32 x = 0; x < Width - 1; x++)
+		{
+			int32 Index1 = y * Width + x;
+			int32 Index2 = Index1 + Width;
+			int32 Index3 = Index1 + 1;
+			int32 Index4 = Index2 + 1;
+
+			// 第一个三角形
+			TerrainTriangles.Add(Index1);
+			TerrainTriangles.Add(Index2);
+			TerrainTriangles.Add(Index3);
+
+			// 第二个三角形
+			TerrainTriangles.Add(Index3);
+			TerrainTriangles.Add(Index2);
+			TerrainTriangles.Add(Index4);
+
+			// 计算面法线并累加到顶点法线
+			FVector Normal1 = -FVector::CrossProduct(TerrainVertices[Index2] - TerrainVertices[Index1], TerrainVertices[Index3] - TerrainVertices[Index1]).GetSafeNormal();
+			FVector Normal2 = -FVector::CrossProduct(TerrainVertices[Index2] - TerrainVertices[Index3], TerrainVertices[Index4] - TerrainVertices[Index3]).GetSafeNormal();
+            
+			TerrainNormals[Index1] += Normal1;
+			TerrainNormals[Index2] += Normal1 + Normal2;
+			TerrainNormals[Index3] += Normal1 + Normal2;
+			TerrainNormals[Index4] += Normal2;
+		}
+	}
+
+	// 标准化顶点法线
+	for (FVector& TerrainNormal : TerrainNormals)
+	{
+		TerrainNormal.Normalize();
+	}
+
+	// 创建网格
+	TerrainProceduralMesh->CreateMeshSection(0, TerrainVertices, TerrainTriangles, TerrainNormals, TerrainUVs, TArray<FColor>(), TerrainTangents, true);
+	if (TerrainMaterialInstance)
+	{
+		TerrainProceduralMesh->SetMaterial(0, TerrainMaterialInstance);
+	}
+
+	TerrainVertices.Empty();
+	TerrainTriangles.Empty();
+	TerrainUVs.Empty();
+	TerrainNormals.Empty();
+	TerrainTangents.Empty();
+	
+}
 
 void UMyBlueprintFunctionLibrary::ClearAllArrays()
 {

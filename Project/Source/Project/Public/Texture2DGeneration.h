@@ -49,6 +49,10 @@ protected:
 	UProceduralMeshComponent* ProceduralMesh;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Polygons")
 	UMaterialInterface* CityMaterialInterface;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Polygons")
+	UProceduralMeshComponent* TerrainProceduralMesh;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Polygons")
+	UMaterialInterface* TerrainMaterialInterface;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Building")
 	float MaxHeight = 50.0f;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Building")
@@ -59,6 +63,8 @@ protected:
 	float SigmaY = 50.0f;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Building")
 	float BuildingHeightNoise = 20.21;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Building")
+	float GreenAreaAmount = 5.0f;
 	//voronoi seed
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "VoronoiSeed")
 	float AOffset = 9.45;
